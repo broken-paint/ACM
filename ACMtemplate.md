@@ -1013,6 +1013,12 @@ vector<int> z_function(string s){
 }
 ```
 
+### 本质不同的字串数
+
+给定一个长度为n的字符串s，计算s本质不同的子串的数量。
+
+每次在后面新增一个字符c，计算新增的本质不同的子串的数量（以c结尾且之前未出现过的子串）。令t为s+c的反串（将原来的字符串倒序排列），计算出t的$z_{max}$，新增本质不同的子串的数量即为$|t|-z_{max}$
+
 ### 前缀函数
 
 π[i]表示子串[0,i]最长的相等的真前缀与真后缀的长度
@@ -1094,6 +1100,14 @@ struct Stringhash{
 };
 vector<int> Stringhash::qpow[2];
 ```
+
+### 字符串的周期
+
+如果s长度为r的前缀和长度为r的后缀相等，那么s长度为r的前缀是s的一个border，n-r是s的一个周期。
+
+pi[n-1],pi[pi[n-1]]……为所有border的长度
+
+最小周期为n-pi[n-1]
 
 ## 数学
 
@@ -2293,6 +2307,8 @@ int CRT(vector<int> &a, vector<int> &r) {
 曼哈顿意义下的坐标(x,y)，可以转化成切比雪夫意义下的(x+y,x-y)
 
 切比雪夫意义下的坐标(x,y)，可以转化成曼哈顿意义下的坐标($\frac{x+y}{2}$,$\frac{x-y}{2}$)
+
+###
 
 ## 离线算法
 
@@ -4120,6 +4136,124 @@ void solve(){
         cout<<"\n";
     }
     cout<<ans<<"\n";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
+### 树的重心
+
+最大独立集
+
+重心的所有子树中最大子数树节点数最少（<=n/2)
+
+### 点分治
+
+路径分为两种，一种经过rt，一种不经过rt
+
+每次对于一棵树，取他的重心，求这个树里面每个点到根的距离。
+
+继续对于他的每个儿子节点作为根的子树，继续找重心，继续上面的操作。
+
+```cpp
+//树上是否存在边权和为k的路径
+#include<bits/stdc++.h>
+using namespace std;
+void solve(){
+    int n,m;
+    cin>>n>>m;
+    vector<vector<pair<int,int>>> v(n+1);
+    for(int i=0;i<n-1;i++){
+        int x,y,t;
+        cin>>x>>y>>t;
+        v[x].emplace_back(y,t);
+        v[y].emplace_back(x,t);
+    }
+    vector<int> que(m),sz(n+1),dp(n+1);
+    vector<bool> p1(1e7+5),ans(m),vis(n+1);
+    p1[0]=1;
+    for(int &p:que) cin>>p;
+    function<void(int,int)> getsize=[&](int x,int fa){
+        sz[x]=1;
+        for(auto &[to,w]:v[x]){
+            if(to==fa||vis[to]) continue;
+            getsize(to,x);
+            sz[x]+=sz[to];
+        }
+    };
+    auto getzx=[&](int x,int fa,int tot){
+        int rt=0;
+        function<void(int,int)> dfs=[&](int x,int fa){
+            int maxn=0;
+            for(auto &[to,w]:v[x]){
+                if(to==fa||vis[to]) continue;
+                dfs(to,x);
+                maxn=max(maxn,sz[to]);
+            }
+            maxn=max(maxn,tot-sz[x]);
+            if(maxn<=tot/2) rt=x;
+        };
+        dfs(x,fa);
+        return rt;
+    };
+    function<void(int)> calc=[&](int x){
+        vector<int> p2;
+        stack<int> st;
+        function<void(int,int)> getdis=[&](int x,int fa){
+            p2.push_back(dp[x]);
+            for(auto &[to,w]:v[x]){
+                if(to==fa||vis[to]) continue;
+                dp[to]=dp[x]+w;
+                getdis(to,x);
+            }
+        };
+        for(auto &[to,w]:v[x]){
+            p2.clear();
+            if(vis[to]) continue;
+            dp[to]=w;
+            getdis(to,x);
+            for(int i=0;i<m;i++){
+                if(ans[i]) continue;
+                for(int &p:p2){
+                    if(que[i]-p>=0&&que[i]-p<=1e7&&p1[que[i]-p]){
+                        ans[i]=1;
+                        break;
+                    }
+                }
+            }
+            for(int &p:p2){
+                if(p>1e7) continue;
+                p1[p]=1;
+                st.push(p);
+            }
+        }
+        while(!st.empty()){
+            p1[st.top()]=0;
+            st.pop();
+        }
+    };
+    function<void(int)> solve=[&](int x){
+        vis[x]=1;
+        calc(x);
+        for(auto &[to,w]:v[x]){
+            if(vis[to]) continue;
+            getsize(to,x);
+            int rt=getzx(to,x,sz[to]);
+            solve(rt);
+        }
+    };
+    getsize(1,0);
+    int rt=getzx(1,0,n);
+    solve(rt);
+    for(int i=0;i<m;i++){
+        if(ans[i]) cout<<"AYE\n";
+        else cout<<"NAY\n";
+    }
 }
 signed main(){
     cin.tie(nullptr)->sync_with_stdio(0);
