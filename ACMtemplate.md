@@ -1940,6 +1940,8 @@ struct EulerSieve{
 
 ### 线性筛欧拉函数
 
+小于等于n且与n互质的正整数数量
+
 ```c++
 struct EulerSieve{
     vector<int> prime;
@@ -2308,7 +2310,19 @@ int CRT(vector<int> &a, vector<int> &r) {
 
 切比雪夫意义下的坐标(x,y)，可以转化成曼哈顿意义下的坐标($\frac{x+y}{2}$,$\frac{x-y}{2}$)
 
-###
+### 积性函数
+
+定义在正整数域上的函数f(x)对于任意的gcd(a,b)=1均满足f(ab)=f(a)*f(b)
+
+可以用欧拉筛线性求值
+
+常见积性函数
+
+μ(n)：莫比乌斯函数
+φ(n)：欧拉函数
+d(n)：一个数n的约数个数
+σ(n)：一个数n的约数和
+f(x)=xk(k∈N)：这个玩意儿也是积性函数
 
 ## 离线算法
 
@@ -2637,7 +2651,7 @@ int kruskal(){
 
 ### 判负环
 
-SPFA判负环，一旦一个点入队次数大于等于n，即存在负环
+SPFA判负环，一旦一个点入队次数大于等于n，即存在负环，时间复杂度O(nm)
 
 ```c++
 const int INF=1e18;
@@ -2657,8 +2671,8 @@ const int INF=1e18;
             for(auto &[to,w]:v[f]){
                 if(dis[to]>dis[f]+w){
                     dis[to]=dis[f]+w;
-                    if(++in[to]>n) return 1;
                     if(!vis[to]){
+                      	if(++in[to]>n) return 1;
                         vis[to]=1;
                         q.push(to);
                     }
@@ -3243,6 +3257,8 @@ while(!q.empty()){
 
 #### dijkstra
 
+时间复杂度O(mlogm)
+
 ```cpp
 priority_queue<pair<int,int>,vector<pair<int,int>>,greater<>> q;
 vector<bool> vis(n+1,0);
@@ -3691,7 +3707,7 @@ struct SegmentTree{
     }
     SegmentTree(int n):n(n){
         node.resize((n<<2)+5);
-        lazy.assign((n<<2+5),0);
+        lazy.assign((n<<2)+5,0);
     }
     SegmentTree(){}
     void init(vector<int> &v){
@@ -3710,7 +3726,7 @@ struct SegmentTree{
     }
     SegmentTree(int n,vector<int> &v):n(n){
         node.resize((n<<2)+5);
-        lazy.assign((n<<2+5),0);
+        lazy.assign((n<<2)+5,0);
         init(v);
     }
     void update(int id,int l,int r,int x,int y,int delta){
