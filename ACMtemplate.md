@@ -4,7 +4,7 @@
 
 区间和
 
-```c++
+```cpp
 struct BIT{
     vector<int> tree;
     int n;
@@ -70,11 +70,9 @@ struct BIT{
 };
 ```
 
-
-
 ### 线段树
 
-```c++
+```cpp
 struct SegmentTree{
     struct edge{
         int sum;
@@ -195,11 +193,150 @@ struct SegmentTree{
 };
 ```
 
+### 线段树合并
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+struct SegmentTree{
+    struct edge{
+        int maxn,maxnpos,lson,rson;
+        edge():maxn(0),maxnpos(0),lson(0),rson(0){}
+    };
+    int n;
+    vector<edge> node;
+    SegmentTree(int n):n(n),node(1){}
+    void pushup(int id,int l,int r){
+        node[id].maxn=0;
+        node[id].maxnpos=0;
+        if(node[id].lson){
+            if(node[id].maxn<node[node[id].lson].maxn){
+                node[id].maxn=node[node[id].lson].maxn;
+                node[id].maxnpos=node[node[id].lson].maxnpos;
+            }
+        }
+        if(node[id].rson){
+            if(node[id].maxn<node[node[id].rson].maxn){
+                node[id].maxn=node[node[id].rson].maxn;
+                node[id].maxnpos=node[node[id].rson].maxnpos;
+            }
+        }
+    }
+    int update(int id,int l,int r,int x,int delta){
+        if(id==0){
+            id=node.size();
+            node.emplace_back();
+        }
+        if(l==r){
+            node[id].maxn+=delta;
+            node[id].maxnpos=l;
+            return id;
+        }
+        int mid=l+(r-l>>1);
+        if(x<=mid) node[id].lson=update(node[id].lson,l,mid,x,delta);
+        else node[id].rson=update(node[id].rson,mid+1,r,x,delta);
+        pushup(id,l,r);
+        return id;
+    }
+    int merge(int a,int b,int l,int r){
+        if(!a&&!b) return 0;
+        if(!a) return b;
+        if(!b) return a;
+        if(l==r){
+            node[a].maxn+=node[b].maxn;
+            return a;
+        }
+        int mid=l+(r-l>>1);
+        node[a].lson=merge(node[a].lson,node[b].lson,l,mid);
+        node[a].rson=merge(node[a].rson,node[b].rson,mid+1,r);
+        pushup(a,l,r);
+        return a;
+    }
+    int query(int id){
+        return node[id].maxnpos;
+    }
+};
+void solve(){
+    int n,m;
+    cin>>n>>m;
+    vector<vector<int>> v(n+1);
+    vector<int> dep(n+1);
+    vector<vector<int>> fa(n+1,vector<int>(25));
+    vector<map<int,int>> mp(n+1);
+    for(int i=1;i<n;i++){
+        int x,y;
+        cin>>x>>y;
+        v[x].push_back(y);
+        v[y].push_back(x);
+    }
+    function<void(int,int)> dfs=[&](int x,int father){
+        dep[x]=dep[father]+1;
+        fa[x][0]=father;
+        for(int i=1;i<=20;i++){
+            fa[x][i]=fa[fa[x][i-1]][i-1];
+        }
+        for(int &to:v[x]){
+            if(to==father) continue;
+            dfs(to,x);
+        }
+    };
+    dfs(1,0);
+    auto LCA=[&](int x,int y){
+        if(dep[x]<dep[y]) swap(x,y);
+        for(int i=20;i>=0;i--){
+            if(dep[fa[x][i]]>=dep[y]){
+                x=fa[x][i];
+            }
+        }
+        if(x==y) return x;
+        for(int i=20;i>=0;i--){
+            if(fa[x][i]!=fa[y][i]){
+                x=fa[x][i];
+                y=fa[y][i];
+            }
+        }
+        return fa[x][0];
+    };
+    for(int i=1;i<=m;i++){
+        int x,y,z;
+        cin>>x>>y>>z;
+        mp[x][z]++;
+        mp[y][z]++;
+        int l=LCA(x,y);
+        mp[l][z]--;
+        mp[fa[l][0]][z]--;
+    }
+    vector<int> head(n+1),ans(n+1);
+    SegmentTree tree(1e5);
+    function<void(int,int)> dfs1=[&](int x,int father){
+        for(auto &to:v[x]){
+            if(to==father) continue;
+            dfs1(to,x);
+            head[x]=tree.merge(head[x],head[to],1,1e5);
+        }
+        for(auto &[p,q]:mp[x]){
+            head[x]=tree.update(head[x],1,1e5,p,q);
+        }
+        ans[x]=tree.query(head[x]);
+    };
+    dfs1(1,0);
+    for(int i=1;i<=n;i++) cout<<ans[i]<<"\n";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
 
 
 ### 并查集
 
-```c++
+```cpp
 //带权并查集
 //sz表示祖先节点个数
 struct DSU{
@@ -230,7 +367,7 @@ struct DSU{
 };
 ```
 
-```c++
+```cpp
 //按秩合并+路径压缩，rank表示子树深度
 struct DSU{
     vector<int> fa;
@@ -379,10 +516,6 @@ struct TRIE{
     }
 };
 ```
-
-
-
-
 
 ### ST 表
 
@@ -795,8 +928,6 @@ signed main(){
 }
 ```
 
-
-
 ### 猫树
 
 $O(nlogn)$次合并，查询时$O(1)$次合并查询
@@ -807,7 +938,7 @@ $O(nlogn)$次合并，查询时$O(1)$次合并查询
 
 $nxt[i][j]$表示从第i个位置开始，字符串j出现的第一个位置
 
-```c++
+```cpp
 struct SubsequenceAutomaton{
     string s;
     int n;
@@ -837,7 +968,8 @@ struct SubsequenceAutomaton{
 ### AC自动机
 
 多模式串匹配
-```c++
+
+```cpp
 template<int Base>
 struct ACAutomaton{
     vector<array<int,26>> tree;
@@ -930,7 +1062,7 @@ struct ACAutomaton{
 
 p数组的值-1对应了回文串长度
 
-```c++
+```cpp
 vector<int> manacher(string s){
     string cur="^";
     for(char &c:s){
@@ -953,11 +1085,9 @@ vector<int> manacher(string s){
 }
 ```
 
-
-
 ### Trie Tree
 
-```c++
+```cpp
 struct TRIE{
     int tot=0,sz=0;
     vector<vector<int>> tree;
@@ -996,7 +1126,7 @@ struct TRIE{
 
 对于一个长度为n的字符串，定义函数z[i]，表示s和s[i,n-1] (即以s[i]开头的后缀)的最长公共前缀（LCP）的长度，则z被称为s的z函数，其中z[0]=0。
 
-```c++
+```cpp
 vector<int> z_function(string s){
     int n=(int)s.size();
     vector<int> z(n);
@@ -1025,7 +1155,7 @@ vector<int> z_function(string s){
 
 其中π[0]=0
 
-```c++
+```cpp
 vector<int> prefix_function(string s){
     int n=(int)s.length();
     vector<int> pi(n);
@@ -1044,7 +1174,7 @@ vector<int> prefix_function(string s){
 
 给定一个文本text和一个字符串pattern，找到并展示s在t中的所有出现位置，时间复杂度O(n+m)
 
-```c++
+```cpp
 vector<int> kmp(string text,string pattern){
     string cur=pattern+'#'+text;
     int sz1=text.size(),sz2=pattern.size();
@@ -1057,11 +1187,9 @@ vector<int> kmp(string text,string pattern){
 }
 ```
 
-
-
 ### 字符串哈希
 
-```c++
+```cpp
 const int HASHMOD[2]={998244353,(int)1e9+7};
 const int BASE[2]={29,31};
 struct Stringhash{
@@ -1079,7 +1207,7 @@ struct Stringhash{
     Stringhash(string s,int base){
         for(int i=0;i<2;i++){
             hash[i]=vector<int>(s.size()+1);
-        	hash[i][0]=0;
+            hash[i][0]=0;
         }
         if(qpow[0].empty()) init();
         for(int i=1;i<=s.size();i++){
@@ -1606,8 +1734,6 @@ struct bigint {
 };
 ```
 
-
-
 ### 矩阵相关
 
 ```cpp
@@ -1686,6 +1812,90 @@ struct matrix{
 };
 ```
 
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+int quickpow(int x,int y,int mod){
+    int ans=1,base=x;
+    while(y){
+        if(y&1) ans=ans*base%mod;
+        base=base*base%mod;
+        y>>=1;
+    }
+    return ans;
+}
+void solve(){
+    int n,m;
+    cin>>n>>m;
+    vector<vector<int>> v(n,vector<int>(n+1));
+    for(int i=0;i<n;i++){
+        int k;
+        cin>>k;
+        v[i][i]=1;
+        while(k--){
+            int x;
+            cin>>x;
+            v[x-1][i]=1;
+        }
+    }
+    vector<int> s(n),t(n);
+    for(int i=0;i<n;i++){
+        cin>>s[i];
+    }
+    for(int i=0;i<n;i++){
+        cin>>t[i];
+    }
+    for(int i=0;i<n;i++){
+        v[i][n]=((t[i]-s[i])%m+m)%m;
+    }
+    vector<pair<int,int>> zy;
+    auto gauss=[&](int N,int M){
+        int cur=0;
+        for(int i=0;i<M;i++){
+            int now=cur;
+            while(now<n&&!v[now][i]) now++;
+            if(now==n) continue;
+            if(now!=cur) swap(v[now],v[cur]);
+            zy.emplace_back(cur,i);
+            for(int j=0;j<n;j++){
+                if(j==cur||!v[j][i]) continue;
+                const int inv=quickpow(v[cur][i],m-2,m)*v[j][i]%m;
+                for(int k=i;k<M;k++){
+                    v[j][k]=((v[j][k]-inv*v[cur][k])%m+m)%m;
+                }
+            }
+            cur++;
+        }
+    };
+    gauss(n,n+1);
+    if(zy.size()&&zy.back().second==n){
+        cout<<"niuza\n";
+        return;
+    }
+    vector<int> ans(n);
+    int pre=n;
+    auto combine=[&](int x,int t){
+        for(int i=0;i<n;i++){
+            v[i][n]=((v[i][n]-t*v[i][x])%m+m)%m;
+        }
+    };
+    for(int i=(int)(zy.size())-1;i>=0;i--){
+        const int inv=quickpow(v[zy[i].first][zy[i].second],m-2,m)*v[zy[i].first][n]%m;
+        ans[zy[i].second]=inv;
+        combine(zy[i].second,inv);
+    }
+    for(int &p:ans) cout<<p<<" ";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
 高斯消元解异或方程组，所有的加减乘除操作变成异或
 
 ```cpp
@@ -1760,7 +1970,82 @@ struct matrix{
 };
 ```
 
-
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+void solve(){
+    int n,k;
+    cin>>n>>k;
+    vector<vector<int>> v(k+1,vector<int>(n));
+    vector<pair<int,int>> zy;
+    auto gauss=[&](int n,int m){
+        int cur=0;
+        for(int i=0;i<m;i++){
+            int now=cur;
+            while(now<n&&!v[now][i]) now++;
+            if(now==n) continue;
+            if(now!=cur) swap(v[now],v[cur]);
+            zy.emplace_back(cur,i);
+            for(int j=0;j<n;j++){
+                if(cur!=j&&v[j][i]){
+                    for(int k=0;k<m;k++){
+                        v[j][k]^=v[cur][k];
+                    }
+                }
+            }
+            cur++;
+        }
+        return;
+    };
+    for(int i=0;i<n;i++){
+        string s;
+        cin>>s;
+        for(int j=0;j<k;j++){
+            v[j][i]=s[j]-'0';
+        }
+        v[k][i]=1;
+    }
+    gauss(k+1,n);
+    if(zy.size()==n){
+        cout<<"*\n";
+    }else{
+        vector<int> pre(k+1),ans;
+        int now=zy.size()-1;
+        auto combine=[&](int x){
+            for(int i=0;i<=k;i++){
+                pre[i]^=v[i][x];
+            }
+        };
+        for(int i=n-1;i>=0;i--){
+            //如果是主元列
+            if(i==zy[now].second){
+                if(pre[zy[now].first]==1){
+                    ans.push_back(i);
+                    combine(i);
+                }
+                now--;
+            }else{
+                ans.push_back(i);
+                combine(i);
+            }
+        }
+        assert(count(pre.begin(),pre.end(),1)==0);
+        vector<int> result(n);
+        for(int i=0;i<ans.size();i++){
+            if(i<ans.size()/2) result[ans[i]]=1;
+            else result[ans[i]]=2;
+        }
+        for(int &p:result) cout<<p;
+    }
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
 
 ### 卡特兰数
 
@@ -1788,13 +2073,11 @@ $$
 H_n=\binom{2n}{n}-\binom{2n}{n-1}
 $$
 
-
-
 ### MillerRabin
 
 判断某个数是否是质数
 
-```c++
+```cpp
 struct MillerRabin{
     vector<int> Prime;
     MillerRabin():Prime({2,3,5,7,11,13,17,19,23}){}
@@ -1831,7 +2114,7 @@ struct MillerRabin{
 
 判断质数（使用millerrabin判断），计算因子
 
-```c++
+```cpp
 struct PollardRho:public MillerRabin{
     mt19937 myrand;
     PollardRho():myrand(time(0)){}
@@ -1896,11 +2179,9 @@ function<void(int,int)> dfs=[&](int id,int now){
 };
 ```
 
-
-
 ### 线性筛质数
 
-```c++
+```cpp
 struct EulerSieve{
     vector<int> prime;
     vector<int> v;
@@ -1942,7 +2223,7 @@ struct EulerSieve{
 
 小于等于n且与n互质的正整数数量
 
-```c++
+```cpp
 struct EulerSieve{
     vector<int> prime;
     vector<bool> isPrime;
@@ -1975,7 +2256,7 @@ struct EulerSieve{
 
 ### 直接求欧拉函数
 
-```c++
+```cpp
 int phi(int n){
     int ans=n;
     for(int i=2;i*i<=n;i++){
@@ -1988,9 +2269,10 @@ int phi(int n){
     return ans;
 }
 ```
+
 ### 组合数学
 
-```c++
+```cpp
 template<int MOD>
 struct Comb{
     vector<int> jc,ijc;
@@ -2018,8 +2300,8 @@ struct Comb{
         return jc[n]*ijc[k]%MOD*ijc[n-k]%MOD;
     }
     int A(int n,int k){
-        if(n<=0||k-1<0||n<k) return 0;
-        return jc[n]*ijc[k-1]%MOD;
+        if(n<0||k-1<0||n<k) return 0;
+        return jc[n]*ijc[n-k]%MOD;
     }
     int CLucas(int n,int m){
         if(m==0) return 1;
@@ -2045,6 +2327,30 @@ C^m_n~mod~p=
 C_{[\frac{n}{p}]}^{[\frac{m}{p}]}*C^{m~mod~p}_{n~mod~p}~mod~p
 \end{cases}
 $$
+
+$$
+C^m_n~mod~p=C^{b_0}_{a_0}\cdot C^{b_1}_{a_1}\cdot C^{b_2}_{a_2} \cdot\cdot\cdot C^{b_k}_{a_k}
+$$
+
+$$
+n=a_0+a_1p+a_2p^2+a_3p^3
+\\
+m=b_0+b_1p+b_2p^2+b_3p^3
+\\
+m、n按p进制展开
+$$
+
+n&m==m,$C_n^m$为奇数
+
+### 二项式反演
+
+$$
+g_n=\sum_{i=0}^nC_n^if_i
+\\
+f_n=\sum_{i=0}^nC_n^i(-1)^{n-i}g_i
+$$
+
+
 
 ### 第二类斯特林数
 
@@ -2138,6 +2444,7 @@ struct Cantor{
     }
 };
 ```
+
 ### 快速幂
 
 ```c++
@@ -2238,7 +2545,7 @@ void rebuild(){
 
 ```cpp
 int querykth(int k){
-    if(count(p.begin(),p.end(),0)){
+    if(flag){
         if(k==1) return 0;
         k--;
     }
@@ -2264,19 +2571,17 @@ a^{(b\text{ mod}\varphi(m))+\varphi(m)}, & \text{if } \gcd(a, m) \neq 1 \text{ a
 
 ```cpp
 int exgcd(int a,int b,int &x,int &y){
-	if(b==0){
-		x=1,y=0;
-		return a;
-	}
-	int x1,y1;
-	int p=exgcd(b,a%b,x1,y1);
-	x=y1;
-	y=(x1-a/b*y1);
-	return p;
+    if(b==0){
+        x=1,y=0;
+        return a;
+    }
+    int x1,y1;
+    int p=exgcd(b,a%b,x1,y1);
+    x=y1;
+    y=(x1-a/b*y1);
+    return p;
 }
 ```
-
-
 
 ### 中国剩余定理
 
@@ -2324,6 +2629,89 @@ d(n)：一个数n的约数个数
 σ(n)：一个数n的约数和
 f(x)=xk(k∈N)：这个玩意儿也是积性函数
 
+### 求n!质因数p的个数
+
+1-n每个数都可以贡献质因数p
+
+p的倍数贡献一个，p^2的倍数继续额外贡献一个
+
+$cnt=\left\lfloor \frac{n}{p} \right\rfloor+\left\lfloor \frac{n}{p^2} \right\rfloor+...+\left\lfloor \frac{n}{p^k} \right\rfloor$
+
+### 二次剩余（模意义下开根）
+
+$gcd(n,p)=1$
+
+$x^2=n(mod~p)$
+
+若存在x，则n为模p的二次剩余（p是奇素数），否则就是二次非剩余
+
+#### Euler判定
+
+a是p的二次剩余当且仅当
+
+$n^\frac{p-1}{2} \equiv1(mod~p)\\$
+
+是p的二次非剩余当且仅当
+
+$n^\frac{p-1}{2} \equiv-1(mod~p)\\$
+
+> 如果p%4=3
+>
+> $n^{(p+1)/4} mod~p$是一个解
+
+这个方程**只有两个解**且它们**互为相反数**。一个二次剩余对应一对模意义下不同的相反数（*p* 为奇素数所以相反数的奇偶性不同）。因为模 *p* 意义下可以找到 $\frac{p-1}{2}$对非零的相反数，所以在模 *p* 意义下共有 $\frac{p-1}{2}$ 个二次剩余。
+
+#### Cipolla算法
+
+先找到一个 *a* 使得 $a^2-n$ 是二次非剩余，令 $w^2\equiv a^2-n(mod~p)$ ,则 $(a+w)^\frac{p+1}{2}$ 即是方程的一个解，其相反数则是另一个解。
+
+在[0,p)中随机一个a，并用欧拉准则判断$a^2-n$是否是二次非剩余，因为二次非剩余有p/2个，所以期望两次找到。
+
+```cpp
+int quickpow(int x,int y,int mod){
+    int ans=1,base=x;
+    x%=mod;
+    if(x==0) return 0;
+    while(y){
+        if(y&1) ans=ans*base%mod;
+        base=base*base%mod;
+        y>>=1;
+    }
+    return ans;
+}
+pair<int,int> Cipolla(int n,int mod){
+    if(!n) return make_pair(0,0);
+    //二次非剩余，无解
+    n%=mod;
+    if(quickpow(n,(mod-1)/2,mod)==mod-1) return {-1,-1};
+    int a=0,w;
+    while(1){
+        a=rand()%mod;
+        w=((a*a%mod-n)%mod+mod)%mod;
+        if(quickpow(w,(mod-1)/2,mod)==mod-1) break;
+    }
+    auto mulcomplex=[&](pair<int,int> x,pair<int,int> y,int mod){
+        return make_pair(((x.first*y.first%mod+w*x.second%mod*y.second%mod)%mod+mod)%mod,(x.first*y.second%mod+x.second*y.first%mod)%mod);
+    };
+    auto quickpowcomplex=[&](pair<int,int> x,int y,int mod){
+        pair<int,int> base=x,ans={1,0};
+        while(y){
+            if(y&1) ans=mulcomplex(ans,base,mod);
+            base=mulcomplex(base,base,mod);
+            y>>=1;
+        }
+        return ans;
+    };
+    pair<int,int> result;
+    result.first=quickpowcomplex(make_pair(a,1),(mod+1)/2,mod).first;
+    result.second=(-result.first%mod+mod)%mod;
+    if(result.first>result.second) swap(result.first,result.second);
+    return result;
+}
+```
+
+
+
 ## 离线算法
 
 ### 莫队
@@ -2361,8 +2749,6 @@ no
 yes
 yes
 ```
-
-
 
 ```c++
 #include<bits/stdc++.h>
@@ -2462,14 +2848,14 @@ signed main(){
         return b<=1;
     };
     for(int i=0;i<m;i++){
+          while(l>query[i].x){
+            upd(--l);
+        }    
+          while(r<query[i].y){
+            upd(++r);
+        }
         while(l<query[i].x){
             upd(l++);
-        }
-        while(l>query[i].x){
-            upd(--l);
-        }
-        while(r<query[i].y){
-            upd(++r);
         }
         while(r>query[i].y){
             upd(r--);
@@ -2633,19 +3019,19 @@ struct edge{
 vector<edge> v(n+1);
 DSU dsu(n);
 int kruskal(){
-	int ans=0,t=0;
-	for(int i=0;i<v.size();i++){
-		int fax=dsu.find(v[i].x);
-		int fay=dsu.find(v[i].y);
-		if(fax==fay) continue;
-		merge(fax,fay);
-		ans+=v[i].k;
-		++t;
-		if(t==n-1){
-			return ans;
-		}
-	}
-	return -1;
+    int ans=0,t=0;
+    for(int i=0;i<v.size();i++){
+        int fax=dsu.find(v[i].x);
+        int fay=dsu.find(v[i].y);
+        if(fax==fay) continue;
+        merge(fax,fay);
+        ans+=v[i].k;
+        ++t;
+        if(t==n-1){
+            return ans;
+        }
+    }
+    return -1;
 }
 ```
 
@@ -2672,7 +3058,7 @@ const int INF=1e18;
                 if(dis[to]>dis[f]+w){
                     dis[to]=dis[f]+w;
                     if(!vis[to]){
-                      	if(++in[to]>n) return 1;
+                          if(++in[to]>n) return 1;
                         vis[to]=1;
                         q.push(to);
                     }
@@ -2985,8 +3371,6 @@ flag[x]=1，表示fa[x]->x是桥
     }
 ```
 
-
-
 ### 双联通分量
 
 #### 边双联通分量
@@ -3224,8 +3608,6 @@ signed main(){
 }
 ```
 
-
-
 ### 最短路
 
 #### SPFA
@@ -3253,8 +3635,6 @@ while(!q.empty()){
 }
 ```
 
-
-
 #### dijkstra
 
 时间复杂度O(mlogm)
@@ -3278,8 +3658,6 @@ while(!q.empty()){
     }
 }
 ```
-
-
 
 #### Johnson
 
@@ -3380,8 +3758,6 @@ signed main(){
     return 0;
 }
 ```
-
-
 
 ### 普通环计数
 
@@ -4280,8 +4656,6 @@ signed main(){
 }
 ```
 
-
-
 ## 计算几何
 
 ```cpp
@@ -4553,8 +4927,6 @@ signed main(){
 }
 ```
 
-
-
 ## 随机算法
 
 ### 模拟退火
@@ -4700,4 +5072,3 @@ auto it=tr.upper_bound({x,INF});
 if(it==tr.end()) continue;
 it->first;
 ```
-
