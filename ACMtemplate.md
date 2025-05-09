@@ -385,7 +385,7 @@ struct DSU{
     bool merge(int x,int y){
         int fax=find(x);
         int fay=find(y);
-        if(x==y) return 0;
+        if(fax==fay) return 0;
         if(rank[fax]<rank[fay]) fa[fax]=fay;
         else{
             fa[fay]=fax;
@@ -1237,6 +1237,32 @@ pi[n-1],pi[pi[n-1]]……为所有border的长度
 
 最小周期为n-pi[n-1]
 
+### 最小表示法
+
+s[i...n]+s[1...i-1]=T
+
+s的最小表示法就是与S循环同构的字典序最小的字符串
+
+```cpp
+int k=0,i=0,j=1;
+while(k<n&&i<n&&j<n){
+    if(v[(i+k)%n]==v[(j+k)%n]){
+        k++;
+    }else{
+        if(v[(i+k)%n]>v[(j+k)%n]){
+            i+=k+1;
+        }else{
+            j+=k+1;
+        }
+        if(i==j) i++;
+        k=0;
+    }
+}
+i=min(i,j);
+```
+
+
+
 ## 数学
 
 ### 高精度
@@ -1750,16 +1776,16 @@ struct matrix{
         v[n-1][m-1]=x;
     }
     matrix operator*(const matrix &e) const{
-        vector<vector<double>> ans(n,vector<double>(e.m,0));
+        matrix ans(n,e.m);
         for(int i=0;i<n;i++){
             for(int j=0;j<e.m;j++){
                 for(int k=0;k<m;k++){
-                    ans[i][j]+=v[i][k]*e.v[k][j];
+                    ans.v[i][j]+=v[i][k]*e.v[k][j];
                 }
             }
         }
         return ans;
-    };
+    }
     //高斯消元
     //无解-1，无穷解0，有唯一解1
     int Gauss(){
@@ -4655,6 +4681,14 @@ signed main(){
     return 0;
 }
 ```
+
+### 点分树
+
+按照点分治的重心，构建一棵新树，也就是对于每一个找到的重心，将上一层分治的重心设置为他的父节点，得到一棵大小不变，最多$log(n)$层的虚树。
+
+每个点子树大小的和为$nlogn$。
+
+
 
 ## 计算几何
 
