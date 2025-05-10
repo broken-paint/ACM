@@ -5106,3 +5106,35 @@ auto it=tr.upper_bound({x,INF});
 if(it==tr.end()) continue;
 it->first;
 ```
+
+## 快读快写
+
+```cpp
+void get(int &x){
+    x=0;
+    char ch=getchar();
+    while(ch<'0'||ch>'9'){
+        ch=getchar();
+    }
+    while(ch>='0'&&ch<='9'){
+        x=x*10+ch-'0';
+        ch=getchar();
+    }
+}
+void print(__int128 x){
+    if(x==0){
+        putchar('0');
+        return;
+    }
+    stack<char> st;
+    while(x){
+        st.push(x%10+'0');
+        x/=10;
+    }
+    while(!st.empty()){
+        putchar(st.top());
+        st.pop();
+    }
+}
+```
+
