@@ -5000,6 +5000,8 @@ signed main(){
 
 ## 计算几何
 
+### 二维几何
+
 ```cpp
 struct Point{
     double x,y;
@@ -5202,6 +5204,495 @@ struct Polygon{
         return {ans,p};
     }
 };
+```
+
+```cpp
+// by trilliverse
+using ll = long long;
+using ld = long double;
+
+const double eps = 1e-8; // 视情况调整eps
+const double inf = 1e20;
+const double pi = acos(-1.0);
+
+int sgn(double x) {
+    if (fabs(x) < eps) return 0;
+    if (x < 0) return -1;
+    else return 1;
+}
+
+struct Point {
+    double x, y;
+    Point() {}
+    Point(double _x, double _y) : x(_x), y(_y) {}
+
+    void input() { cin >> x >> y; }
+    void output() { cerr << fixed << setprecision(10) << x << " " << y << '\n'; }
+
+    bool operator==(Point b) const { return sgn(x - b.x) == 0 && sgn(y - b.y) == 0; }
+    bool operator<(Point b) const { return sgn(x-b.x)==0?sgn(y-b.y)<0:sgn(x-b.x)<0; }
+    Point operator+(const Point &b) const { return Point(x + b.x, y + b.y); }
+    Point operator-(const Point &b) const { return Point(x - b.x, y - b.y); }
+    Point operator*(const double &k) const { return Point(x * k, y * k); }
+    Point operator/(const double &k) const { return Point(x / k, y / k); }
+
+    double operator*(const Point &b) const { return x * b.x + y * b.y; }  // 点乘
+    double operator^(const Point &b) const { return x * b.y - y * b.x; }  // 叉乘
+
+    // 象限
+    int quad() const {
+        if (x > 0 && y >= 0) return 1;
+        if (x <= 0 && y > 0) return 2;
+        if (x < 0 && y <= 0) return 3;
+        if (x >= 0 && y < 0) return 4;
+        return 5;
+    }
+    double len() { return hypot(x, y); }     // 到原点的距离
+    double len2() { return x * x + y * y; }  // 到原点距离平方
+    double dis(Point b) { return hypot(x - b.x, y - b.y); }  // 两点间距离(可能会被卡精度!)
+    double dis2(Point b) { return (x - b.x) * (x - b.x) + (y - b.y) * (y - b.y); }
+    // pa ^ pb
+    double cross(Point a, Point b) {
+        Point p = {x, y};
+        return (a - p) ^ (b - p);
+    }
+    // pa * pb
+    double dot(Point a, Point b) {
+        Point p = {x, y};
+        return (a - p) * (b - p);
+    }
+    // 点p看a,b所成夹角 弧度制
+    double rad(Point a, Point b) {
+        Point p = *this;
+        return fabs(atan2(fabs((a - p) ^ (b - p)), (a - p) * (b - p)));
+    }
+    // 角度制
+    double ang(Point a, Point b) {
+        return rad(a, b) / pi * 180.0;
+    }
+    // 考虑叉乘方向的夹角
+    double drad(Point a, Point b) {
+        Point p = *this;
+        double angle = p.rad(a, b);  // 计算夹角大小 [0, π]
+        // 根据叉积符号确定方向
+        if (sgn(cross(a, b)) < 0) {
+            angle = 2 * pi - angle;
+        }
+        return angle;
+    }
+    Point rotleft() { return Point(-y, x); }   // 逆时针旋转90
+    Point rotright() { return Point(y, -x); }  // 顺时针旋转90
+    // 绕着点p逆时针旋转angle弧度
+    Point rotate(Point p, double angle) {
+        Point v = (*this) - p;
+        double c = cos(angle);
+        double s = sin(angle);
+        return Point(p.x + v.x * c - v.y * s, p.y + v.x * s + v.y * c);
+    }
+    // 化为长度为r的向量
+    Point trunc(double r) {
+        double l = len();
+        if (!sgn(l))
+            return *this;
+        r /= l;
+        return Point(x * r, y * r);
+    }
+};
+
+struct Line {
+    Point u, v;
+    Line() {}
+    Line(Point _u, Point _v) : u(_u), v(_v) {}
+    bool operator==(Line l) { return (u == l.u) && (v == l.v); }
+
+    // 点和倾斜角α确定直线 α∈[0, pi)
+    Line(Point p, double angle) {
+        u = p;
+        if (sgn(angle - pi / 2) == 0)
+            v = u + Point(0, 1);  // 斜率不存在
+        else
+            v = u + Point(1, tan(angle));
+    }
+    // ax+by+c=0
+    Line(double a, double b, double c) {
+        if (sgn(a) == 0) {
+            u = Point(0, -c / b);
+            v = Point(1, -c / b);
+        } else if (sgn(b) == 0) {
+            u = Point(-c / a, 0);
+            v = Point(-c / a, 1);
+        } else {
+            u = Point(0, -c / b);
+            v = Point(1, (-c - a) / b);
+        }
+    }
+
+    void input() { u.input(), v.input(); }
+    void adjust() {
+        if (v < u)
+            swap(u, v);
+    }
+    double len() { return u.dis(v); }  // 线段长度
+    // 方向向量
+    Point dir() { return v - u; }
+    // 直线倾斜角 α∈[0, pi) 弧度制
+    double rad() {
+        double theta = atan2(v.y - u.y, v.x - u.x);
+        if (sgn(theta) < 0) theta += pi;
+        if (sgn(theta - pi) == 0) theta -= pi;
+        return theta;
+    }
+    // 直线倾斜角 角度制
+    double rad(bool f) { return rad() * 180 / pi; }
+    // 点和直线(线段)关系
+    // 1:左侧  2:右侧  3:线段上  4:线段前  5:线段后
+    int relation(Point p) {
+        int c = sgn((p - u) ^ (v - u));
+        if (c < 0) return 1;
+        else if (c > 0) return 2;
+        else {  // on (line or segment)
+            if (sgn((p - u) * (p - v)) <= 0) return 3;  // on segment
+            if (sgn((p - u) * (v - u)) > 0) return 4;  // on line front
+            else return 5;  // on line back
+        }
+    }
+
+    // 直线与直线关系
+    // 0:平行  1:重合  2:正交  3:其他
+    int linecrossline(Line l) {
+        if (sgn((v - u) * (l.v - l.u)) == 0) return 2;
+        // 叉乘为0 → 共线向量(平行or重合)
+        if (sgn((v - u) ^ (l.v - l.u)) == 0) return l.relation(u) > 2;
+        return 3;
+    }
+    // 线段与线段关系
+    // 2 规范相交 1 非规范相交 0 不相交
+    int segcrossseg(Line l) {
+        int d1 = sgn((v - u) ^ (l.u - u));
+        int d2 = sgn((v - u) ^ (l.v - u));
+        int d3 = sgn((l.v - l.u) ^ (u - l.u));
+        int d4 = sgn((l.v - l.u) ^ (v - l.u));
+        if ((d1 ^ d2) == -2 && (d3 ^ d4) == -2) return 2;
+        return (d1 == 0 && sgn((l.u - u) * (l.u - v)) <= 0) ||
+               (d2 == 0 && sgn((l.v - u) * (l.v - v)) <= 0) ||
+               (d3 == 0 && sgn((u - l.u) * (u - l.v)) <= 0) ||
+               (d4 == 0 && sgn((v - l.u) * (v - l.v)) <= 0);
+    }
+    // 直线与线段关系
+    // *this:line; seg:segment
+    // 2 规范相交 1 非规范相交 0 不相交
+    int linecrossseg(Line seg) {
+        int d1 = sgn((v - u) ^ (seg.u - u));
+        int d2 = sgn((v - u) ^ (seg.v - u));
+        if ((d1 ^ d2) == -2) return 2;
+        return (d1 == 0 || d2 == 0);
+    }
+    // 求两直线交点 （要保证两直线不平行或重合）
+    Point crosspoint(Line l) {
+        double a1 = (l.v - l.u) ^ (u - l.u);
+        double a2 = (l.v - l.u) ^ (v - l.u);
+        Point p = {(u.x * a2 - v.x * a1) / (a2 - a1), (u.y * a2 - v.y * a1) / (a2 - a1)};
+        p.x = fabs(p.x) < eps ? 0 : p.x;  // 可能会输出-0.00 特判
+        p.y = fabs(p.y) < eps ? 0 : p.y;
+        return p;
+    }
+
+    // 点到直线的距离
+    double dispointtoline(Point p) {
+        return fabs((p - u) ^ (v - u)) / len();
+    }
+    // 点到线段的距离
+    double dispointtoseg(Point p) {
+        if (sgn((p - u) * (v - u)) < 0 || sgn((p - v) * (u - v)) < 0)
+            return min(p.dis(u), p.dis(v));
+        return dispointtoline(p);
+    }
+    // 线段到线段的距离
+    double dissegtoseg(Line l) {
+        if (segcrossseg(l))
+            return 0;  // 线段相交，距离就是0
+        return min(min(dispointtoseg(l.u), dispointtoseg(l.v)),
+                   min(l.dispointtoseg(u), l.dispointtoseg(v)));
+    }
+
+    // 点p在直线上的投影
+    Point project(Point p) {
+        return u + (((v - u) * ((v - u) * (p - u))) / ((v - u).len2()));
+        // return p*
+    }
+    // 点p关于直线的对称点
+    Point symmetry(Point p) {
+        Point q = project(p);  // 连线中点
+        return Point(2 * q.x - p.x, 2 * q.y - p.y);
+    }
+};
+
+struct Polygon {
+    int n;
+    vector<Point> p;
+    vector<Line> l;
+    Polygon() : n(0) {}
+    Polygon(int _n) {
+        n = _n;
+        p.resize(n);
+        l.resize(n);
+    }
+
+    void input() {
+        for (int i = 0; i < n; i++) p[i].input();
+    }
+    void output() {  // debug
+        cerr << "n=" << n << '\n';
+        for (int i = 0; i < n; i++) p[i].output();
+    }
+    void add(Point q) {
+        p.push_back(q);
+        n++;
+    }
+    void getline() {
+        for (int i = 0; i < n; i++) {
+            l[i] = Line(p[i], p[(i + 1) % n]);
+        }
+    }
+    // 周长
+    double getCircumference() {
+        double sum = 0;
+        for (int i = 0; i < n; i++) sum += p[i].dis(p[(i + 1) % n]);
+        return sum;
+    }
+    // 面积（三角剖分）
+    double getArea() {
+        double sum = 0;
+        for (int i = 0; i < n; i++) sum += (p[i] ^ p[(i + 1) % n]);
+        return fabs(sum) / 2;
+    }
+    // 重心 UVA 10002
+    Point getBarycentre() {
+        Point ret(0, 0);
+        double area = 0;
+        for (int i = 1; i < n - 1; i++) {
+            double tmp = (p[i] - p[0]) ^ (p[i + 1] - p[0]);
+            if (sgn(tmp) == 0) continue;
+            area += tmp;
+            ret.x += (p[0].x + p[i].x + p[i + 1].x) / 3 * tmp;
+            ret.y += (p[0].y + p[i].y + p[i + 1].y) / 3 * tmp;
+        }
+        if (sgn(area)) ret = ret / area;
+        return ret;
+    }
+    // 极角排序
+    void norm() {
+        sort(p.begin(), p.end(), [](const Point &a, const Point &b) {
+            if (a.quad() != b.quad()) return a.quad() < b.quad();
+            return (a ^ b) > 0;
+        });
+    }
+    // Andrew得到凸包 点编号0~n-1
+    void getConvex(Polygon &convex) {
+        vector<int> st(2 * n + 5, 0);
+        vector<bool> used(n, 0);
+        int top = 0;
+        sort(p.begin(), p.end());
+        st[++top] = 0;
+        for (int i = 1; i < n; i++) {
+            while (top >= 2 && ((p[st[top]]-p[st[top-1]]) ^ (p[i] - p[st[top]])) <= 0) {
+                used[st[top--]] = 0;
+            }
+            used[i] = 1;
+            st[++top] = i;
+        }
+        int tmp = top;  // 下凸壳大小
+        for (int i = n - 2; i >= 0; i--) {
+            if (!used[i]) {
+                while(top > tmp && ((p[st[top]]-p[st[top-1]])^(p[i]-p[st[top]])) <= 0) {
+                    used[st[top--]] = 0;
+                }
+                used[i] = 1;
+                st[++top] = i;
+            }
+        }
+        if (top == 1) convex.add(p[st[1]]); // 特判只有1个点
+        else {
+            for (int i = 1; i < top; i++) {
+                convex.add(p[st[i]]);
+                if (top - 1 == 2 && p[st[i]] == p[st[i + 1]]) break; // 特判所有都为重点
+            }
+        }
+    }
+
+    bool isConvex() {
+        bool s[2];
+        memset(s, false, sizeof(s));
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            int k = (j + 1) % n;
+            s[sgn((p[j] - p[i]) ^ (p[k] - p[i])) + 1] = true;
+            if (s[0] && s[2]) return false;
+        }
+        return true;
+    }
+    // 点q在多边形内的关系  0:外部 1:内部 2:边上 3:点上
+    int relationpoint(Point q) {
+        for (int i = 0; i < n; i++) {
+            if (p[i] == q)
+                return 3;
+        }
+        getline();
+        for (int i = 0; i < n; i++) {
+            if (l[i].pointonseg(q))
+                return 2;
+        }
+        int cnt = 0;
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            int k = sgn((q - p[j]) ^ (p[i] - p[j]));
+            int u = sgn(p[i].y - q.y);
+            int v = sgn(p[j].y - q.y);
+            if (k > 0 && u < 0 && v >= 0)
+                cnt++;
+            if (k < 0 && v < 0 && u >= 0)
+                cnt--;
+        }
+        return cnt != 0;
+    }
+    // 旋转卡壳求凸包直径
+    double getDiameter() {
+        if (n == 1) return 0.0;
+        if (n == 2) return p[0].dis(p[1]);
+        // assert(n >= 3);
+        double ans = 0.0;
+        int j = 1;
+        for (int i = 0; i < n; i++) {
+            while (fabs((p[(i + 1) % n] - p[i]) ^ (p[(j + 1) % n] - p[i])) > fabs((p[(i + 1) % n] - p[i]) ^ (p[j] - p[i]))) {
+                j = (j + 1) % n;
+            }
+            ans = max({ans, p[i].dis(p[j]), p[(i + 1) % n].dis(p[(j + 1) % n])});
+        }
+        return ans;
+    }
+    // 旋转卡壳求最小矩形覆盖
+    // 必须是凸包（逆时针）UVA 10173
+    double minRectangleCover() {
+        if (n <= 2) return 0.0;
+        double ans = -1;
+        int j = 1, r = 1, l;
+        for (int i = 0; i < n; i++) {
+            // 卡出离边p[i]~p[i+1]最远点
+            while (sgn(p[i].cross(p[(i + 1) % n], p[(j + 1) % n]) 
+                       - p[i].cross(p[(i + 1) % n], p[j])) >= 0) {
+                j = (j + 1) % n;
+            }
+            // 卡出边p[i]~p[i+1]方向上正向最远点
+            while (sgn(p[i].dot(p[(i + 1) % n], p[(r + 1) % n]) 
+                       - p[i].dot(p[(i + 1) % n], p[r])) >= 0) {
+                r = (r + 1) % n;
+            }
+            if (i == 0) l = r;
+            // 卡出边p[i]~p[i+1]方向上负向最远点
+            while (sgn(p[i].dot(p[(i + 1) % n], p[(l + 1) % n]) 
+                       - p[i].dot(p[(i + 1) % n], p[l])) <= 0) {
+                l = (l + 1) % n;
+            }
+            double d = (p[i] - p[(i + 1) % n]).len2();
+            double tmp = p[i].cross(p[(i + 1) % n], p[j]) 
+                * (p[i].dot(p[(i + 1) % n], p[r]) - p[i].dot(p[(i + 1) % n], p[l])) / d;
+            if (ans < 0 || ans > tmp) ans = tmp;
+        }
+        return ans;
+    }
+    // 求凸包最小内角 
+    double minAngle() {
+        if (n <= 2) return 0.0;
+        double minn = 200.0;
+        for (int i = 0; i < n; i++) {
+            // ang 角度制; rad 弧度制
+            minn = min(minn, p[i].ang(p[(i + n - 1) % n], p[(i + 1) % n]));
+        }
+        return minn;
+    }
+};
+
+struct halfplane : public Line {
+    double angle;
+    halfplane() {}
+    //`表示向量u->v逆时针(左侧)的半平面`
+    halfplane(Point _u, Point _v) {
+        u = _u;
+        v = _v;
+    }
+    halfplane(Line l) {
+        u = l.u;
+        v = l.v;
+    }
+    void calc_angle() {
+        angle = atan2(v.y - u.y, v.x - u.x);
+    }
+    bool operator<(const halfplane &b) const {
+        return angle < b.angle;
+    }
+};
+
+const int maxp = 1005;
+struct halfplanes {
+    int n;
+    // halfplane hp[maxp];
+    vector<halfplane> hp;
+    Point p[maxp];
+    int que[maxp];
+    int st, ed;
+
+    void add(halfplane l) {
+        hp.push_back(l);
+        n++;
+    }
+
+    // 去重
+    void unique() {
+        int m = 1;
+        for (int i = 1; i < n; i++) {
+            if (sgn(hp[i].angle - hp[i - 1].angle) != 0)
+                hp[m++] = hp[i];
+            else if (sgn((hp[m - 1].v - hp[m - 1].u) ^ (hp[i].u - hp[m - 1].u)) > 0)
+                hp[m - 1] = hp[i];
+        }
+        n = m;
+    }
+
+    bool halfplaneinsert() {
+        for (int i = 0; i < n; i++) hp[i].calc_angle();
+        sort(hp.begin(), hp.end());
+        unique();
+        que[st = 0] = 0;
+        que[ed = 1] = 1;
+        p[1] = hp[0].crosspoint(hp[1]);
+        for (int i = 2; i < n; i++) {
+            while (st < ed && sgn(hp[i].u.cross(hp[i].v, p[ed])) < 0) ed--;
+            while (st < ed && sgn(hp[i].u.cross(hp[i].v, p[st + 1])) < 0) st++;
+            que[++ed] = i;
+            if (hp[i].parallel(hp[que[ed - 1]])) return false;
+            p[ed] = hp[i].crosspoint(hp[que[ed - 1]]);
+        }
+        while (st < ed && sgn(hp[que[st]].u.cross(hp[que[st]].v, p[ed])) < 0) ed--;
+        while (st < ed && sgn(hp[que[st]].u.cross(hp[que[st]].v, p[st + 1])) < 0) st++;
+        if (st + 1 >= ed) return false;
+        return true;
+    }
+
+    // 得到最后半平面交得到的凸多边形
+    // 需要先调用halfplaneinsert() 且返回true
+    void getConvex(Polygon &convex) {
+        p[st] = hp[que[st]].crosspoint(hp[que[ed]]);
+        convex.n = ed - st + 1;
+        convex.p.resize(n);
+        for (int j = st, i = 0; j <= ed; i++, j++) convex.p[i] = p[j];
+    }
+};
+```
+
+### 三维几何
+
+```cpp
+// to be added...
 ```
 
 ## 博弈论
