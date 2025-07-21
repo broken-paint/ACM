@@ -2748,13 +2748,13 @@ pair<int,int> Cipolla(int n,int mod){
 }
 ```
 
-### min25筛
+### Min25筛
 
-在$O\left(\frac{n^{3/4}}{\log n}\right) $时间内求出积性函数f的前缀和，且需要满足
+在 $O\left(\frac{n^{3/4}}{\log n}\right)$ 时间内求出积性函数f的前缀和，且需要满足
 
-- f(x)在x为质数的时候有一个简单多项式表示
+- $f(x)$ 在 $x$ 为质数的时候有一个简单多项式表示
 
-- $f(x^c)$在x为质数的时候可以快速计算
+- $f(x^c)$ 在 $x$ 为质数的时候可以快速计算
 
 f：原函数（积性函数）
 
@@ -2765,7 +2765,7 @@ fpi：新函数（完全积性函数），质数处与f取值相同
 
 $g(n, j) = g(n, j-1) - p_j^k \left( g\left(\frac{n}{p_j}, j-1\right) - g(p_{j-1}, j-1) \right)$
 
-$S(n, x) = g(n) - sp_x + \sum_{p_k^e \leq n \& k > x} f(p_k^e) \left( S\left(\frac{n}{p_k^e}, k\right) + [e \neq 1] \right)$
+$S(n, x) = g(n) - sp_x + \sum_{\substack{p_k^e \leq n \\ k > x}} f(p_k^e) \left( S\left(\frac{n}{p_k^e}, k\right) + [e \neq 1] \right)$
 
 即质数贡献（可能需要对某些值进行修改）+合数贡献
 
