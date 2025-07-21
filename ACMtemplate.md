@@ -2296,6 +2296,18 @@ int phi(int n){
 }
 ```
 
+### 莫比乌斯函数
+
+$$
+\mu(n) = \begin{cases}
+1, & \text{若} n = 1 \\
+0, & \text{若} n \text{能被一个素数的平方整除} \\
+(-1)^r, & \text{若} n \text{是} r \text{个} (r \geq 1) \text{不同素数的乘积}
+\end{cases}
+$$
+
+
+
 ### 组合数学
 
 ```cpp
@@ -2733,6 +2745,302 @@ pair<int,int> Cipolla(int n,int mod){
     result.second=(-result.first%mod+mod)%mod;
     if(result.first>result.second) swap(result.first,result.second);
     return result;
+}
+```
+
+### min25筛
+
+在$O\left(\frac{n^{3/4}}{\log n}\right) $时间内求出积性函数f的前缀和，且需要满足
+
+- f(x)在x为质数的时候有一个简单多项式表示
+
+- $f(x^c)$在x为质数的时候可以快速计算
+
+f：原函数（积性函数）
+
+fpi：新函数（完全积性函数），质数处与f取值相同
+
+1. 先求出$g[n][i]$，即$x\in[2,n]  $且（x为质数或x的最小质因数>$prime_i$)时，所有fpi(x)的和
+2. $s[n][i]$表示，$x\in[2,n]$且最小质因数>$prime_i$时，所有f(x)的和
+
+$g(n, j) = g(n, j-1) - p_j^k \left( g\left(\frac{n}{p_j}, j-1\right) - g(p_{j-1}, j-1) \right)$
+
+$S(n, x) = g(n) - sp_x + \sum_{p_k^e \leq n \& k > x} f(p_k^e) \left( S\left(\frac{n}{p_k^e}, k\right) + [e \neq 1] \right)$
+
+即质数贡献（可能需要对某些值进行修改）+合数贡献
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+const int MOD=1e9+7;
+int f(int ind,int x){
+    x%=MOD;
+    if(ind==0){
+        return x;
+    }else{
+        return x*x%MOD;
+    }
+}
+int fpi(int ind,int x){
+    x%=MOD;
+    if(ind==0){
+        return x;
+    }else{
+        return x*x%MOD;
+    }
+}
+int inv6=166666668,inv2=500000004;
+int fpisum(int ind,int x){
+    x%=MOD;
+    if(ind==0){
+        return (((1+x)%MOD*x%MOD*inv2%MOD-1)%MOD+MOD)%MOD;
+    }else{
+        return ((x%MOD*(x+1)%MOD*(2*x%MOD+1)%MOD*inv6%MOD-1)%MOD+MOD)%MOD;
+    }
+}
+template<int items>
+struct Min25{
+    struct EulerSieve{
+        vector<int> prime;
+        vector<int> v;
+        vector<array<int,items>> sp;
+        int n;
+        EulerSieve(int n,const int MOD):v(n+1){
+            this->n=n;
+            for(int i=2;i<=n;i++){
+                if(v[i]==0){
+                    prime.push_back(i);
+                    v[i]=i;
+                    sp.emplace_back();
+                    for(int j=0;j<items;j++){
+                        if(sp.size()>=2) sp.back()[j]=sp[sp.size()-2][j];
+                        sp.back()[j]=(sp.back()[j]+fpi(j,i))%MOD;
+                    }
+                }
+                for(int &p:prime){
+                    if(i*p>n) break;
+                    v[i*p]=p;
+                    if(i%p==0) break;
+                }
+            }
+        }
+    };
+    int n,sqr;
+    EulerSieve eulersieve;
+    vector<int> ind1,ind2,w;
+    vector<array<int,items>> g;
+    int result=0;
+    //f[i](x) 多项式拆成若干个单项式，第i个单项式(x=p^t)
+    //fpi[i](x) 多项式拆成若干个单项式，和f[i]相等的完全积性函数
+    //fpisum[i](x) 多项式拆成若干个单项式，fpi[i](x)前缀和(不含fpi[i][1])
+    //sign[i]第i个单项式的系数（符号） 
+    Min25(int n,array<int,items> &sign):n(n),sqr(sqrt(n)),ind1(sqr+10),ind2(sqr+10),eulersieve(sqr,MOD){
+        w.reserve(2*sqr+10);
+        g.reserve(2*sqr+10);
+        ind1.reserve(sqr+10);
+        ind2.reserve(sqr+10);
+        for(int i=1;i<=n;){
+            int j=n/(n/i);
+            w.emplace_back(n/i);
+            g.emplace_back();
+            for(int j=0;j<items;j++){
+                g.back()[j]=fpisum(j,w.back());
+            }
+            if(n/i<=sqr) ind1[n/i]=w.size()-1;
+            else ind2[n/(n/i)]=w.size()-1;
+            i=j+1;
+        }
+        for(int t=0;t<eulersieve.prime.size();t++){
+            int p=eulersieve.prime[t];
+            for(int i=0;i<w.size()&&p<=w[i]/p;i++){
+                int k=w[i]/p<=sqr?ind1[w[i]/p]:ind2[n/(w[i]/p)];
+                for(int j=0;j<items;j++){
+                    g[i][j]-=(fpi(j,p)*(g[k][j]%MOD-(t-1>=0?eulersieve.sp[t-1][j]:0ll))%MOD)%MOD;
+                    g[i][j]=(g[i][j]%MOD+MOD)%MOD;
+                }
+            }
+        }
+        auto s=[&](auto &&self,int x,int y){
+            if(y>=1&&eulersieve.prime[y-1]>=x) return 0ll;
+            int k=x<=sqr?ind1[x]:ind2[n/x];
+            int ans=0;
+            for(int i=0;i<items;i++){
+                int t=y>0?eulersieve.sp[y-1][i]:0;
+                ans=(ans+sign[i]*(g[k][i]-t)%MOD)%MOD;
+            }
+            for(int i=y+1;i<=eulersieve.prime.size()&&eulersieve.prime[i-1]<=x/eulersieve.prime[i-1];i++){
+                int pe=eulersieve.prime[i-1];
+                for(int e=1;pe<=x;e++,pe*=eulersieve.prime[i-1]){
+                    int xx=pe%MOD;
+                    int sum=0;
+                    for(int j=0;j<items;j++){
+                        sum=(sum+sign[j]*f(j,pe))%MOD;
+                    }
+                    ans=(ans+sum*(self(self,x/pe,i)+(e!=1))%MOD)%MOD;
+                    ans=(ans+MOD)%MOD;
+                }
+            }
+            return ans;
+        };
+        result=((s(s,n,0)+1)%MOD+MOD)%MOD;
+    }
+    int get(){
+        return result;
+    }
+};
+void solve(){
+    int n;
+    cin>>n;
+    array<int,2> sign={-1,1};
+    Min25<2> min25(n,sign);
+    cout<<min25.get()<<"\n";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+const int MOD=1e9+7;
+int f(int x,int t){
+    return (x^t)%MOD;
+}
+int fpi(int ind,int x){
+    x%=MOD;
+    if(ind==0){
+        return x;
+    }else{
+        return 1;
+    }
+}
+int inv2=500000004;
+int fpisum(int ind,int x){
+    x%=MOD;
+    if(ind==0){
+        return (((1+x)%MOD*x%MOD*inv2%MOD-1)%MOD+MOD)%MOD;
+    }else{
+        return ((x-1)%MOD+MOD)%MOD;
+    }
+}
+template<int items>
+struct Min25{
+    struct EulerSieve{
+        vector<int> prime;
+        vector<int> v;
+        vector<array<int,items>> sp;
+        int n;
+        EulerSieve(int n,const int MOD):v(n+1){
+            this->n=n;
+            for(int i=2;i<=n;i++){
+                if(v[i]==0){
+                    prime.push_back(i);
+                    v[i]=i;
+                    sp.emplace_back();
+                    for(int j=0;j<items;j++){
+                        if(sp.size()>=2) sp.back()[j]=sp[sp.size()-2][j];
+                        sp.back()[j]=(sp.back()[j]+fpi(j,i))%MOD;
+                    }
+                }
+                for(int &p:prime){
+                    if(i*p>n) break;
+                    v[i*p]=p;
+                    if(i%p==0) break;
+                }
+            }
+        }
+    };
+    int n,sqr;
+    EulerSieve eulersieve;
+    vector<int> ind1,ind2,w;
+    vector<array<int,items>> g;
+    int result=0;
+    //f[i](x) 多项式拆成若干个单项式，第i个单项式(x=p^t)
+    //fpi[i](x) 多项式拆成若干个单项式，和f[i]相等的完全积性函数
+    //fpisum[i](x) 多项式拆成若干个单项式，fpi[i](x)前缀和(不含fpi[i][1])
+    //sign[i]第i个单项式的系数（符号） 
+    Min25(int n,array<int,items> &sign):n(n),sqr(sqrt(n)),ind1(sqr+10),ind2(sqr+10),eulersieve(sqr,MOD){
+        w.reserve(2*sqr+10);
+        g.reserve(2*sqr+10);
+        ind1.reserve(sqr+10);
+        ind2.reserve(sqr+10);
+        for(int i=1;i<=n;){
+            int j=n/(n/i);
+            w.emplace_back(n/i);
+            g.emplace_back();
+            for(int j=0;j<items;j++){
+                g.back()[j]=fpisum(j,w.back());
+            }
+            if(n/i<=sqr) ind1[n/i]=w.size()-1;
+            else ind2[n/(n/i)]=w.size()-1;
+            i=j+1;
+        }
+        
+        for(int t=0;t<eulersieve.prime.size();t++){
+            int p=eulersieve.prime[t];
+            for(int i=0;i<w.size()&&p<=w[i]/p;i++){
+                int k=w[i]/p<=sqr?ind1[w[i]/p]:ind2[n/(w[i]/p)];
+                for(int j=0;j<items;j++){
+                    g[i][j]-=(fpi(j,p)*(g[k][j]%MOD-(t-1>=0?eulersieve.sp[t-1][j]:0ll))%MOD)%MOD;
+                    g[i][j]=(g[i][j]%MOD+MOD)%MOD;
+                }
+            }
+        }
+        auto s=[&](auto &&self,int x,int y){
+            if(y>=1&&eulersieve.prime[y-1]>=x) return 0ll;
+            int k=x<=sqr?ind1[x]:ind2[n/x];
+            int ans=0;
+            for(int i=0;i<items;i++){
+                int t=y>0?eulersieve.sp[y-1][i]:0;
+                ans=(ans+sign[i]*(g[k][i]-t)%MOD)%MOD;
+            }
+            if(x>=2&&y==0){
+                ans=(ans+2)%MOD;
+            }
+            for(int i=y+1;i<=eulersieve.prime.size()&&eulersieve.prime[i-1]<=x/eulersieve.prime[i-1];i++){
+                int pe=eulersieve.prime[i-1];
+                for(int e=1;pe<=x;e++,pe*=eulersieve.prime[i-1]){
+                    int xx=pe%MOD;
+                    int sum=f(eulersieve.prime[i-1],e);
+                    ans=(ans+sum*(self(self,x/pe,i)+(e!=1))%MOD)%MOD;
+                    ans=(ans+MOD)%MOD;
+                }
+            }
+            return ans;
+        };
+        result=((s(s,n,0)+1)%MOD+MOD)%MOD;
+    }
+    int get(){
+        return result;
+    }
+};
+void solve(){
+    int n;
+    cin>>n;
+    if(n==1){
+        cout<<1<<"\n";
+        return;
+    }else if(n==2){
+        cout<<4<<"\n";
+        return;
+    }
+    array<int,2> sign={1,-1};
+    Min25<2> min25(n,sign);
+    cout<<min25.get()<<"\n";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
 }
 ```
 
