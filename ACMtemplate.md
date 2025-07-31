@@ -2388,6 +2388,12 @@ g_n=\sum_{i=0}^nC_n^if_i
 f_n=\sum_{i=0}^nC_n^i(-1)^{n-i}g_i
 $$
 
+$$
+g_k=\sum_{i=k}^nC_i^kf_i
+\\
+f_k=\sum_{i=k}^nC_i^k(-1)^{i-k}g_i
+$$
+
 
 
 ### 第二类斯特林数
@@ -2831,9 +2837,9 @@ struct Min25{
     vector<int> ind1,ind2,w;
     vector<array<int,items>> g;
     int result=0;
-    //f[i](x) 多项式拆成若干个单项式，第i个单项式(x=p^t)
-    //fpi[i](x) 多项式拆成若干个单项式，和f[i]相等的完全积性函数
-    //fpisum[i](x) 多项式拆成若干个单项式，fpi[i](x)前缀和(不含fpi[i][1])
+    //f(i,x) 多项式拆成若干个单项式，第i个单项式(x=p^t)
+    //fpi(i,x) 多项式拆成若干个单项式，和f[i]相等的完全积性函数
+    //fpisum(i,x) 多项式拆成若干个单项式，fpi[i](x)前缀和(不含fpi[i][1])
     //sign[i]第i个单项式的系数（符号） 
     Min25(int n,array<int,items> &sign):n(n),sqr(sqrt(n)),ind1(sqr+10),ind2(sqr+10),eulersieve(sqr,MOD){
         w.reserve(2*sqr+10);
