@@ -932,6 +932,81 @@ signed main(){
 
 $O(nlogn)$次合并，查询时$O(1)$次合并查询
 
+具体做法是，每个节点，l,mid,r,存储mid往前的后缀贡献，和mid往后的前缀贡献
+
+查询区间[l,r]，则只需要在他们的lca上查找前缀后缀即可O(1)查询
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+struct CatTree{
+    int n;
+    vector<int> pos;//[i,i]所在的位置
+    vector<pair<int,int>> lr;
+    vector<array<vector<int>,2>> maxn;//某个区间，从mid分开的后缀前缀贡献
+    int lca(int x,int y){
+        int xx=__builtin_clz(x);
+        int yy=__builtin_clz(y);
+        if(xx<yy) x>>=yy-xx;
+        else y>>=xx-yy;
+        return x>>(__lg(x^y)+1);
+    }
+    CatTree(int n,vector<int> &v):n(n),pos(n+1,0),maxn((n<<2)+10),lr((n<<2)+10){
+        auto buildtree=[&](auto &&self,int id,int l,int r){
+            int mid=l+(r-l>>1);
+            maxn[id][0].reserve(mid-l+2);
+            maxn[id][1].reserve(r-mid+1);
+            maxn[id][0].push_back(-1e18);
+            maxn[id][1].push_back(-1e18);
+            lr[id]={l,r};
+            if(l==r){
+                pos[l]=id;
+                maxn[id][0].push_back(v[l]);
+                return;
+            }
+            for(int i=mid;i>=l;i--){
+                maxn[id][0].push_back(max(maxn[id][0].back(),v[i]));
+            }
+            for(int i=mid+1;i<=r;i++){
+                maxn[id][1].push_back(max(maxn[id][1].back(),v[i]));
+            }
+            self(self,id<<1,l,mid);
+            self(self,id<<1|1,mid+1,r);
+        };
+        buildtree(buildtree,1,1,n);
+    }
+    int query(int x,int y){
+        int l=lca(pos[x],pos[y]);
+        int mid=(lr[l].first+lr[l].second)>>1;
+        return max(maxn[l][0][mid-x+1],maxn[l][1][y-mid]);
+    }
+};
+void solve(){
+    int n,m;
+    cin>>n>>m;
+    vector<int> v(n+1);
+    for(int i=1;i<=n;i++){
+        cin>>v[i];
+    }
+    CatTree cattree(n,v);
+    while(m--){
+        int x,y;
+        cin>>x>>y;
+        cout<<cattree.query(x,y)<<"\n";
+    }
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
+
+
 ## 字符串
 
 ### 序列自动机
