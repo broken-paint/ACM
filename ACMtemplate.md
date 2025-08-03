@@ -1336,6 +1336,80 @@ while(k<n&&i<n&&j<n){
 i=min(i,j);
 ```
 
+### 后缀数组（SA）
+
+sa[i]表示所有后缀排序后第i小的后缀的编号，rk[i]表示后缀i的排名，height[i]表示第i名后缀与前一名的后缀的最长公共前缀
+
+$height[rk[i]] \ge height[rk[i - 1]] - 1$
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+void solve(){
+    string s;
+    cin>>s;
+    auto getsa=[&](const string &s){
+        int n=s.size();
+        vector<int> sa(n),rk(n);
+        iota(sa.begin(),sa.end(),0ll);
+        sort(sa.begin(),sa.end(),[&](int a,int b){
+            return s[a]<s[b];
+        });
+        rk[sa[0]]=0;
+        for(int i=1;i<n;i++){
+            rk[sa[i]]=rk[sa[i-1]];
+            if(s[sa[i]]!=s[sa[i-1]]) rk[sa[i]]++;
+        }
+        for(int len=1;len<n;len<<=1){
+            vector<tuple<int,int,int>> v;//第一关键字，第二关键字，下标
+            v.reserve(n);
+            for(int i=0;i<n;i++){
+                v.emplace_back(rk[i],(i+len<n?rk[i+len]:-1),i);
+            }
+            sort(v.begin(),v.end(),[](const auto &a,const auto &b){
+                if(get<0>(a)!=get<0>(b)) return get<0>(a)<get<0>(b);
+                if(get<1>(a)!=get<1>(b)) return get<1>(a)<get<1>(b);
+                return get<2>(a)<get<2>(b);
+            });
+            for(int i=0;i<n;i++){
+                sa[i]=get<2>(v[i]);
+            }
+            rk[sa[0]]=0;
+            for(int i=1;i<n;i++){
+                rk[sa[i]]=rk[sa[i-1]];
+                if(get<0>(v[i-1])!=get<0>(v[i])||get<1>(v[i-1])!=get<1>(v[i])){
+                    rk[sa[i]]++;
+                }
+            }
+        }
+        vector<int> height(n);
+        for(int i=0,k=0;i<n;i++){
+            if(!rk[i]){
+                k=0;
+                continue;
+            }
+            if(k) --k;
+            while(i+k<n&&sa[rk[i]-1]+k<n&&s[i+k]==s[sa[rk[i]-1]+k]) k++;
+            height[rk[i]]=k;
+        }
+        return make_pair(sa,height);
+    };
+    auto [sa,height]=getsa(s);
+    for(int i=0;i<s.size();i++) cout<<sa[i]<<" ";
+    cout<<"\n"; 
+    for(int i=0;i<s.size();i++) cout<<height[i]<<" ";
+    cout<<"\n";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
 
 
 ## 数学
