@@ -1410,6 +1410,87 @@ signed main(){
 }
 ```
 
+### SAM
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+using ll=long long;
+struct SAM{
+    struct edge{
+        int len,link,cnt;
+        array<int,26> nxt;
+        edge(int len):len(len),link(-1),cnt(0){nxt.fill(0);}
+    };
+    vector<edge> node;
+    int last;
+    SAM():last(0),node(1,0){}
+    void add(char c){
+        int cur=node.size();
+        node.emplace_back(node[last].len+1);
+        node[cur].cnt=1;
+        int p=last;
+        while(p!=-1&&!node[p].nxt[c-'a']){
+            node[p].nxt[c-'a']=cur;
+            p=node[p].link;
+        }
+        if(p==-1){
+            node[cur].link=0;
+        }else{
+            int q=node[p].nxt[c-'a'];
+            if(node[q].len==node[p].len+1){
+                node[cur].link=q;
+            }else{
+                int clone=node.size();
+                node.emplace_back(node[q]);
+                node[clone].cnt=0;
+                node[clone].len=node[p].len+1;
+                node[q].link=node[cur].link=clone;
+                while(p!=-1&&node[p].nxt[c-'a']==q){
+                    node[p].nxt[c-'a']=clone;
+                    p=node[p].link;
+                }
+            }
+        }
+        last=cur;
+    }
+};
+void solve(){
+    string s;
+    cin>>s;
+    SAM sam;
+    for(char &c:s) sam.add(c);
+    vector<vector<int>> son(sam.node.size());
+    vector<ll> dp(sam.node.size());
+    ll ans=0;
+    for(int i=1;i<sam.node.size();i++){
+        son[sam.node[i].link].push_back(i);
+    }
+    vector<int> id(sam.node.size());
+    iota(id.begin(),id.end(),0);
+    sort(id.begin(),id.end(),[&](int &a,int &b){
+        return sam.node[a].len>sam.node[b].len;
+    });
+    for(auto &x:id){
+        dp[x]=sam.node[x].cnt;
+        for(auto &p:son[x]){
+            dp[x]+=dp[p];
+        }
+        if(dp[x]>1){
+            ans=max(ans,(ll)dp[x]*sam.node[x].len);
+        }
+    }
+    cout<<ans<<"\n";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
 
 
 ## 数学
