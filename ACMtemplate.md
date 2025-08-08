@@ -5776,29 +5776,20 @@ signed main(){
 ### Kruskal重构树
 
 ```cpp
-// 带权并查集
-// sz表示祖先节点个数
 struct DSU
 {
     vector<int> fa;
-    vector<int> sz;
     int n;
     DSU(int n)
     {
         this->n = n;
         fa.resize(n + 1);
-        sz.resize(n + 1, 0);
         for (int i = 0; i <= n; i++)
             fa[i] = i;
     }
     int find(int x)
     {
-        if (fa[x] == x)
-            return x;
-        int fax = fa[x];
-        fa[x] = find(fa[x]);
-        sz[x] += sz[fax];
-        return fa[x];
+        return (fa[x] == x ? x : fa[x] = find(fa[x]));
     }
 };
 struct edge
@@ -5836,7 +5827,7 @@ struct Ex_kruskal
         }
         return val[fa[x][0]];
     }
-    Ex_kruskal(int &_n, vector<edge> &_v) : n(_n), dsu(2 * _n), fa(2 * _n + 1, vector<int>(25)), val(2 * _n + 1), dep(2 * _n + 1)
+    Ex_kruskal(int &_n, vector<edge> &_v) : n(_n), dsu(2 * _n), fa(2 * _n + 1, vector<int>(21)), val(2 * _n + 1), dep(2 * _n + 1)
     {
         sort(_v.begin(), _v.end(), [&](edge &a, edge &b)
              { return a.k < b.k; });
