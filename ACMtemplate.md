@@ -1,6 +1,6 @@
 # 数据结构
 
-### 树状数组
+## 树状数组
 
 区间和
 
@@ -70,7 +70,7 @@ struct BIT{
 };
 ```
 
-### 线段树
+## 线段树
 
 ```cpp
 struct SegmentTree{
@@ -144,7 +144,7 @@ struct SegmentTree{
 };
 ```
 
-### 线段树标记永久化
+## 线段树标记永久化
 
 ```cpp
 struct SegmentTree{
@@ -193,7 +193,7 @@ struct SegmentTree{
 };
 ```
 
-### 线段树合并
+## 线段树合并
 
 ```cpp
 #include<bits/stdc++.h>
@@ -333,8 +333,7 @@ signed main(){
 ```
 
 
-
-### 并查集
+## 并查集
 
 ```cpp
 //带权并查集
@@ -396,9 +395,9 @@ struct DSU{
 };
 ```
 
-### 可持久化线段树
+## 可持久化线段树
 
-开40倍空间
+- 开40倍空间
 
 ```cpp
 struct PresidentTree{
@@ -456,7 +455,7 @@ struct PresidentTree{
 };
 ```
 
-### 可持久化01trietree
+## 可持久化01trietree
 
 ```cpp
 struct TRIE{
@@ -517,7 +516,7 @@ struct TRIE{
 };
 ```
 
-### ST 表
+## ST 表
 
 ```cpp
 struct ST{
@@ -548,7 +547,7 @@ struct ST{
 vector<int> ST::Log2;
 ```
 
-### 权值线段树
+## 权值线段树
 
 ```cpp
 struct SegmentTree{
@@ -610,9 +609,9 @@ struct SegmentTree{
 };
 ```
 
-### 树套树
+## 树套树
 
-#### 树状数组套权值线段树
+### 树状数组套权值线段树
 
 区间kth等的问题，用树状数组来实现权值线段树的区间求和
 
@@ -769,7 +768,7 @@ signed main(){
 }
 ```
 
-#### 线段树套平衡树
+### 线段树套平衡树
 
 区间排名，单点修改，找区间前驱后继
 
@@ -928,7 +927,7 @@ signed main(){
 }
 ```
 
-### 猫树
+## 猫树
 
 $O(nlogn)$次合并，查询时$O(1)$次合并查询
 
@@ -1007,7 +1006,7 @@ signed main(){
 
 # 字符串
 
-### 序列自动机
+## 序列自动机
 
 $nxt[i][j]$表示从第i个位置开始，字符串j出现的第一个位置
 
@@ -1038,7 +1037,7 @@ struct SubsequenceAutomaton{
 };
 ```
 
-### AC自动机
+## AC自动机
 
 多模式串匹配
 
@@ -1127,7 +1126,7 @@ struct ACAutomaton{
 };
 ```
 
-### Manacher
+## Manacher
 
 求回文串长度
 
@@ -1158,7 +1157,7 @@ vector<int> manacher(string s){
 }
 ```
 
-### Trie Tree
+## Trie Tree
 
 ```cpp
 struct TRIE{
@@ -1195,7 +1194,7 @@ struct TRIE{
 };
 ```
 
-### 扩展KMP
+## 扩展KMP
 
 对于一个长度为n的字符串，定义函数z[i]，表示s和s[i,n-1] (即以s[i]开头的后缀)的最长公共前缀（LCP）的长度，则z被称为s的z函数，其中z[0]=0。
 
@@ -1216,13 +1215,13 @@ vector<int> z_function(string s){
 }
 ```
 
-### 本质不同的字串数
+## 本质不同的字串数
 
 给定一个长度为n的字符串s，计算s本质不同的子串的数量。
 
 每次在后面新增一个字符c，计算新增的本质不同的子串的数量（以c结尾且之前未出现过的子串）。令t为s+c的反串（将原来的字符串倒序排列），计算出t的$z_{max}$，新增本质不同的子串的数量即为$|t|-z_{max}$
 
-### 前缀函数
+## 前缀函数
 
 π[i]表示子串[0,i]最长的相等的真前缀与真后缀的长度
 
@@ -1243,7 +1242,7 @@ vector<int> prefix_function(string s){
 }
 ```
 
-### KMP函数
+## KMP函数
 
 给定一个文本text和一个字符串pattern，找到并展示s在t中的所有出现位置，时间复杂度O(n+m)
 
@@ -1260,7 +1259,7 @@ vector<int> kmp(string text,string pattern){
 }
 ```
 
-### 字符串哈希
+## 字符串哈希
 
 ```cpp
 const int HASHMOD[2]={998244353,(int)1e9+7};
@@ -1302,7 +1301,7 @@ struct Stringhash{
 vector<int> Stringhash::qpow[2];
 ```
 
-### 字符串的周期
+## 字符串的周期
 
 如果s长度为r的前缀和长度为r的后缀相等，那么s长度为r的前缀是s的一个border，n-r是s的一个周期。
 
@@ -1310,7 +1309,7 @@ pi[n-1],pi[pi[n-1]]……为所有border的长度
 
 最小周期为n-pi[n-1]
 
-### 最小表示法
+## 最小表示法
 
 s[i...n]+s[1...i-1]=T
 
@@ -1334,7 +1333,7 @@ while(k<n&&i<n&&j<n){
 i=min(i,j);
 ```
 
-### 后缀数组（SA）
+## 后缀数组（SA）
 
 sa[i]表示所有后缀排序后第i小的后缀的编号，rk[i]表示后缀i的排名，height[i]表示第i名后缀与前一名的后缀的最长公共前缀
 
@@ -1408,7 +1407,7 @@ signed main(){
 }
 ```
 
-### SAM
+## SAM
 
 ```cpp
 #include<bits/stdc++.h>
@@ -2770,11 +2769,11 @@ ll mul(ll a, ll b, ll p) {
 
 
 
-### 线性基
+## 线性基
 
 解决异或问题。原序列里的每一个数都可以由线性基里面的一些数异或得到，线性基里面任意一些数异或起来不等于0，线性基里面的数的个数唯一，且数的个数是最小的。
 
-##### 插入
+### 插入
 
 d[i]存最高位1在第i位的数
 
@@ -2794,7 +2793,7 @@ void insert(int x){
 }
 ```
 
-##### 查询某个数能否被异或出来
+### 查询某个数能否被异或出来
 
 ```cpp
 bool ask(int x){
@@ -2807,7 +2806,7 @@ bool ask(int x){
 }
 ```
 
-##### 查询异或最大值
+### 查询异或最大值
 
 ```cpp
 int askmx(int x){
@@ -2819,7 +2818,7 @@ int askmx(int x){
 }
 ```
 
-##### 查询异或最小值
+### 查询异或最小值
 
 ```cpp
 int askminn(int x){
@@ -2834,7 +2833,7 @@ int askminn(int x){
 }
 ```
 
-##### 查询异或第k小
+### 查询异或第k小
 
 重构一个各个位之间互不影响的d数组
 
