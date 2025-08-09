@@ -2882,6 +2882,7 @@ a^{(b\text{ mod}\varphi(m))+\varphi(m)}, & \text{if } \gcd(a, m) \neq 1 \text{ a
 ## 扩展欧几里德
 
 ```cpp
+//ax+by=gcd(a,b)
 int exgcd(int a,int b,int &x,int &y){
     if(b==0){
         x=1,y=0;
@@ -2921,6 +2922,8 @@ int CRT(vector<int> &a, vector<int> &r) {
     return (ans%n+n)%n;
 }
 ```
+
+
 
 ## 切比雪夫距离与曼哈顿距离之间的转化
 
