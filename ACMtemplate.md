@@ -5773,6 +5773,112 @@ signed main(){
 
 每个点子树大小的和为$nlogn$。
 
+### Kruskal重构树
+
+```cpp
+struct DSU
+{
+    vector<int> fa;
+    int n;
+    DSU(int n)
+    {
+        this->n = n;
+        fa.resize(n + 1);
+        for (int i = 0; i <= n; i++)
+            fa[i] = i;
+    }
+    int find(int x)
+    {
+        return (fa[x] == x ? x : fa[x] = find(fa[x]));
+    }
+};
+struct edge
+{
+    int x, y, k;
+};
+struct Ex_kruskal
+{
+    int n;
+    vector<vector<int>> fa;
+    vector<int> val;
+    vector<int> dep;
+    DSU dsu;
+    int LCA(int x, int y)
+    {
+        // 不连通返回-1
+        if (dsu.find(x) != dsu.find(y))
+            return -1;
+        if (dep[x] < dep[y])
+            swap(x, y);
+        for (int i = 20; i >= 0; i--)
+        {
+            if (dep[fa[x][i]] >= dep[y])
+            {
+                x = fa[x][i];
+            }
+        }
+        for (int i = 20; i >= 0; i--)
+        {
+            if (fa[x][i] != fa[y][i])
+            {
+                x = fa[x][i];
+                y = fa[y][i];
+            }
+        }
+        return val[fa[x][0]];
+    }
+    Ex_kruskal(int &_n, vector<edge> &_v) : n(_n), dsu(2 * _n), fa(2 * _n + 1, vector<int>(21)), val(2 * _n + 1), dep(2 * _n + 1)
+    {
+        sort(_v.begin(), _v.end(), [&](edge &a, edge &b)
+             { return a.k < b.k; });
+        vector<vector<int>> v(2 * _n + 1);
+        vector<bool> vis(2 * _n + 1);
+        int cnt = 1;
+        for (int i = 0; i < _v.size(); i++)
+        {
+            int fax = dsu.find(_v[i].x);
+            int fay = dsu.find(_v[i].y);
+            if (fax != fay)
+            {
+                v[fax].emplace_back(n + cnt);
+                v[fay].emplace_back(n + cnt);
+                v[n + cnt].emplace_back(fax);
+                v[n + cnt].emplace_back(fay);
+                val[n + cnt] = _v[i].k;
+                dsu.fa[fax] = n + cnt;
+                dsu.fa[fay] = n + cnt;
+                cnt++;
+            }
+            if (cnt == n)
+            {
+                break;
+            }
+        }
+        auto dfs = [&](auto &&self, int x, int father) -> void
+        {
+            vis[x] = 1;
+            dep[x] = dep[father] + 1;
+            fa[x][0] = father;
+            for (int i = 1; i <= 20; i++)
+            {
+                fa[x][i] = fa[fa[x][i - 1]][i - 1];
+            }
+            for (int &to : v[x])
+            {
+                if (to == father)
+                    continue;
+                self(self, to, x);
+            }
+        };
+        for (int i = 2 * n - 1; i > 0; i--)
+        {
+            if (!vis[i])
+                dfs(dfs, i, 0);
+        }
+    }
+};
+```
+
 
 
 ## 计算几何
