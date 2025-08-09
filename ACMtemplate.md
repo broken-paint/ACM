@@ -1491,11 +1491,9 @@ signed main(){
 }
 ```
 
+# 数学
 
-
-## 数学
-
-### 高精度
+## 高精度
 
 压位高精度。在int下，加法压9位，乘法压3位，long long压4位
 
@@ -2719,7 +2717,7 @@ struct Cantor{
 };
 ```
 
-### 快速幂
+## 快速幂
 
 ```c++
 int quickpow(int x,int y,int mod){
@@ -2733,6 +2731,46 @@ int quickpow(int x,int y,int mod){
     return ans;
 }
 ```
+
+## 模意义下大整数乘法
+
+> 计算 $a\times b\mathrm{~mod~}p$，$a,b\leq p \leq 10^{18}$
+
+- 龟速乘 $O(\log_2b)$
+
+```c++
+// O(log2(b))
+inline ll mul(ll a, ll b, const ll p) {
+    assert(p > 0);
+    a %= p, b %= p;
+    if (a < 0) a += p;  // 保证正数
+    if (b < 0) b += p;  // 保证正数
+    ll ans = 0;
+    while (b) {
+        if (b & 1) {
+            ans += a;
+            if (ans > p) ans -= p; // 直接取模会慢很多
+        }
+        a <<= 1;
+        if (a > p) a -= p;
+        b >>= 1;
+    }
+    return ans;
+}
+```
+
+- 快速乘：$a\times b\mathrm{~mod~}p = a\times b-\lfloor a\times b/p\rfloor\times p$，可以处理模数在 `long long` 范围内、不需要使用黑科技 `__int128` 的、复杂度为 $O(1)$
+
+```c++
+ll mul(ll a, ll b, ll p) {
+    ll ans = a * b - ll(1.L * a * b / p) * p;
+    ans %= p;
+    if (ans < 0) ans += p;
+    return ans;
+}
+```
+
+
 
 ### 线性基
 
@@ -2831,7 +2869,7 @@ int querykth(int k){
 }
 ```
 
-### 扩展欧拉定理
+## 扩展欧拉定理
 
 $a^{b}\equiv\left\{
 \begin{array}{ll}
@@ -2841,7 +2879,7 @@ a^{(b\text{ mod}\varphi(m))+\varphi(m)}, & \text{if } \gcd(a, m) \neq 1 \text{ a
 \end{array}
 \right.$
 
-### 扩展欧几里德
+## 扩展欧几里德
 
 ```cpp
 int exgcd(int a,int b,int &x,int &y){
@@ -2857,18 +2895,19 @@ int exgcd(int a,int b,int &x,int &y){
 }
 ```
 
-### 中国剩余定理
+## 中国剩余定理 CRT
 
-$\left\{
+求解如下形式的一元线性同余方程组（其中 $n_1,n_2,\cdots,n_k$ 两两互质）
+$$
+\left\{
 \begin{array}{l}
 x \equiv a_{1} \pmod{n_{1}} \\
 x \equiv a_{2} \pmod{n_{2}} \\
 \vdots \\
 x \equiv a_{k} \pmod{n_{k}}
 \end{array}
-\right.$
-
-其中n1……nk互质
+\right.
+$$
 
 ```cpp
 int CRT(vector<int> &a, vector<int> &r) {
@@ -2883,13 +2922,13 @@ int CRT(vector<int> &a, vector<int> &r) {
 }
 ```
 
-### 切比雪夫距离与曼哈顿距离之间的转化
+## 切比雪夫距离与曼哈顿距离之间的转化
 
 曼哈顿意义下的坐标(x,y)，可以转化成切比雪夫意义下的(x+y,x-y)
 
 切比雪夫意义下的坐标(x,y)，可以转化成曼哈顿意义下的坐标($\frac{x+y}{2}$,$\frac{x-y}{2}$)
 
-### 积性函数
+## 积性函数
 
 定义在正整数域上的函数f(x)对于任意的gcd(a,b)=1均满足f(ab)=f(a)*f(b)
 
@@ -2903,9 +2942,9 @@ d(n)：一个数n的约数个数
 σ(n)：一个数n的约数和
 f(x)=xk(k∈N)：这个玩意儿也是积性函数
 
-### 多项式
+## 多项式
 
-#### 快速傅里叶变换 FFT
+### 快速傅里叶变换 FFT
 
 - 实数（`double`）系数的**线性卷积**/多项式乘法：`Poly C = A * B;`，默认得到**浮点数系数**的多项式；
 - **整数系数**：用 `llround()`（返回整型），对负数也正确四舍五入，避免 `(int)(x+0.5)` 的坑；
