@@ -2954,6 +2954,85 @@ ll CRT(vector<int>& a, vector<int>& r) {
 
 ### 扩展CRT
 
+处理模数不互质的情况
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int __int128
+int exgcd(int a,int b,int &x,int &y){
+    if(b==0){
+        x=1,y=0;
+        return a;
+    }
+    int x1,y1;
+    int p=exgcd(b,a%b,x1,y1);
+    x=y1;
+    y=(x1-a/b*y1);
+    return p;
+}
+int ExCRT(vector<int> &a,vector<int> &r){
+    int a1=0,r1=1;
+    for(int i=0;i<a.size();i++){
+        int a2=(a[i]%r[i]+r[i])%r[i],r2=r[i];
+        int x,y;
+        int g=exgcd(r1,r2,x,y);
+        if((a2-a1)%g!=0){
+            return -1;
+        }
+        x*=(a1-a2)/g;
+        //y*=(a2-a1)/g;
+        a1=a1-r1*x;
+        //y*=(a2-a1)/g;
+        r1=r2/g*r1;
+        a1=(a1%r1+r1)%r1;
+        //cerr<<a1<<" "<<r1<<" "<<g<<"\n";
+    }
+    return (a1%r1+r1)%r1;
+}
+void get(int &x){
+    x=0;
+    char ch=getchar();
+    while(ch<'0'||ch>'9'){
+        ch=getchar();
+    }
+    while(ch>='0'&&ch<='9'){
+        x=x*10+ch-'0';
+        ch=getchar();
+    }
+}
+void print(__int128 x){
+    if(x==0){
+        putchar('0');
+        return;
+    }
+    stack<char> st;
+    while(x){
+        st.push(x%10+'0');
+        x/=10;
+    }
+    while(!st.empty()){
+        putchar(st.top());
+        st.pop();
+    }
+}
+void solve(){
+    int k;
+    get(k);
+    vector<int> a(k),b(k);
+    for(int i=0;i<k;i++){
+        get(a[i]);
+        get(b[i]);
+    }
+    print(ExCRT(b,a));
+}
+signed main(){
+    int t=1;
+    while(t--) solve();
+    return 0;
+}
+```
+
 
 
 ## 切比雪夫距离与曼哈顿距离之间的转化
