@@ -1,4 +1,4 @@
-## 数据结构
+# 数据结构
 
 ### 树状数组
 
@@ -1005,9 +1005,7 @@ signed main(){
 }
 ```
 
-
-
-## 字符串
+# 字符串
 
 ### 序列自动机
 
@@ -1988,7 +1986,7 @@ struct bigint {
 };
 ```
 
-### 矩阵相关
+## 矩阵相关
 
 ```cpp
 const double eps=1e-8;
@@ -2301,7 +2299,7 @@ signed main(){
 }
 ```
 
-### 卡特兰数
+## 卡特兰数
 
 有一个大小为n*n的方格图，左下角为(0,0)，右上角为(n,n)，从左下角开始每次只能向右或者向上走一个单位，不能走到y=x上方（但可以触碰），有几种可能的路径
 
@@ -2327,7 +2325,7 @@ $$
 H_n=\binom{2n}{n}-\binom{2n}{n-1}
 $$
 
-### MillerRabin
+## MillerRabin
 
 判断某个数是否是质数
 
@@ -2364,7 +2362,7 @@ struct MillerRabin{
 };
 ```
 
-### PollardRho
+## PollardRho
 
 判断质数（使用millerrabin判断），计算因子
 
@@ -2400,7 +2398,7 @@ struct PollardRho:public MillerRabin{
 };
 ```
 
-### 超快质因数分解&求约数
+## 超快质因数分解&求约数
 
 时间复杂度$O(n^{\frac{1}{4}})$
 
@@ -2433,7 +2431,7 @@ function<void(int,int)> dfs=[&](int id,int now){
 };
 ```
 
-### 线性筛质数
+## 线性筛质数
 
 ```cpp
 struct EulerSieve{
@@ -2473,7 +2471,7 @@ struct EulerSieve{
 };
 ```
 
-### 线性筛欧拉函数
+## 线性筛欧拉函数
 
 小于等于n且与n互质的正整数数量
 
@@ -2508,7 +2506,7 @@ struct EulerSieve{
 };
 ```
 
-### 直接求欧拉函数
+## 直接求欧拉函数
 
 ```cpp
 int phi(int n){
@@ -2524,7 +2522,7 @@ int phi(int n){
 }
 ```
 
-### 莫比乌斯函数
+## 莫比乌斯函数
 
 $$
 \mu(n) = \begin{cases}
@@ -2536,7 +2534,7 @@ $$
 
 
 
-### 组合数学
+## 组合数学
 
 ```cpp
 template<int MOD>
@@ -2583,7 +2581,7 @@ struct Comb{
 };
 ```
 
-### Lucas
+## Lucas
 
 用于求解问题规模很大，而模数是一个不大的质数的时候的组合数问题，p为质数
 $$
@@ -2608,7 +2606,7 @@ $$
 
 n&m==m,$C_n^m$为奇数
 
-### 二项式反演
+## 二项式反演
 
 $$
 g_n=\sum_{i=0}^nC_n^if_i
@@ -2624,11 +2622,11 @@ $$
 
 
 
-### 第二类斯特林数
+## 第二类斯特林数
 
 将n个两两不同的元素，划分为k个互不区分的非空子集的方案数
 
-### 康托展开
+## 康托展开
 
 用于全排列的状态压缩，是一个全排列到一个自然数的映射，康托展开的实质是计算当前排列在所有从小到大的排列中的次序编号
 
@@ -2882,6 +2880,9 @@ a^{(b\text{ mod}\varphi(m))+\varphi(m)}, & \text{if } \gcd(a, m) \neq 1 \text{ a
 ## 扩展欧几里德
 
 ```cpp
+// mod非素数，扩展欧几里得
+// ax+by = gcd(a,b)
+// 返回 d=gcd(a,b);和对应于等式ax+by=d中的x,y
 int exgcd(int a,int b,int &x,int &y){
     if(b==0){
         x=1,y=0;
@@ -2892,6 +2893,17 @@ int exgcd(int a,int b,int &x,int &y){
     x=y1;
     y=(x1-a/b*y1);
     return p;
+}
+// lzy
+ll exgcd(ll a, ll b, ll& x, ll& y) {
+    if (b == 0) {
+        x = 1;
+        y = 0;
+        return a;
+    }
+    ll g = exgcd(b, a % b, y, x);
+    y -= (a / b) * x;
+    return g;
 }
 ```
 
@@ -2909,7 +2921,7 @@ x \equiv a_{k} \pmod{n_{k}}
 \right.
 $$
 
-```cpp
+```c++
 int CRT(vector<int> &a, vector<int> &r) {
     int n=1,ans=0;
     for(int i=0;i<r.size();i++) n=n*r[i];
@@ -2920,7 +2932,25 @@ int CRT(vector<int> &a, vector<int> &r) {
     }
     return (ans%n+n)%n;
 }
+// lzy: 优先使用i128，比龟速乘更快
+static inline ll mul(ll a, ll b, const ll mod) {
+    return (i128)a * b % mod;
+}
+ll CRT(vector<int>& a, vector<int>& r) {
+    ll n = 1, ans = 0;
+    for (int i = 0; i < r.size(); i++) n = n * r[i];
+    for (int i = 0; i < a.size(); i++) {
+        ll m = n / r[i], b, y;
+        exgcd(m, r[i], b, y);
+        ans = (ans + mul(mul(a[i], m, n), b, n)) % n;
+    }
+    return (ans % n + n) % n;
+}
 ```
+
+### 扩展CRT
+
+
 
 ## 切比雪夫距离与曼哈顿距离之间的转化
 
@@ -3068,7 +3098,7 @@ public:
 using Poly = Polynomial<double, std::complex>;
 ```
 
-#### 快速数论变换 FNTT
+### 快速数论变换 FNTT
 
 - NTT是**整数域上的快速傅里叶变换**，用于高效求解模意义下的多项式卷积。
 - 要求模数 $P$ 是形如 $k \cdot 2^n + 1$ 的质数（如 $P = 998244353 = 119 \cdot 2^{23} + 1$），且有原根 $g$。
@@ -3481,9 +3511,7 @@ using Z = ModInt<ll, 998244353>;
 using Poly = Polynomial<Z>;
 ```
 
-
-
-### 求n!质因数p的个数
+## 求n!质因数p的个数
 
 1-n每个数都可以贡献质因数p
 
@@ -3491,7 +3519,7 @@ p的倍数贡献一个，p^2的倍数继续额外贡献一个
 
 $cnt=\left\lfloor \frac{n}{p} \right\rfloor+\left\lfloor \frac{n}{p^2} \right\rfloor+...+\left\lfloor \frac{n}{p^k} \right\rfloor$
 
-### 二次剩余（模意义下开根）
+## 二次剩余（模意义下开根）
 
 $gcd(n,p)=1$
 
@@ -3499,7 +3527,7 @@ $x^2=n(mod~p)$
 
 若存在x，则n为模p的二次剩余（p是奇素数），否则就是二次非剩余
 
-#### Euler判定
+### Euler判定
 
 a是p的二次剩余当且仅当
 
@@ -3515,7 +3543,7 @@ $n^\frac{p-1}{2} \equiv-1(mod~p)\\$
 
 这个方程**只有两个解**且它们**互为相反数**。一个二次剩余对应一对模意义下不同的相反数（*p* 为奇素数所以相反数的奇偶性不同）。因为模 *p* 意义下可以找到 $\frac{p-1}{2}$对非零的相反数，所以在模 *p* 意义下共有 $\frac{p-1}{2}$ 个二次剩余。
 
-#### Cipolla算法
+### Cipolla算法
 
 先找到一个 *a* 使得 $a^2-n$ 是二次非剩余，令 $w^2\equiv a^2-n(mod~p)$ ,则 $(a+w)^\frac{p+1}{2}$ 即是方程的一个解，其相反数则是另一个解。
 
@@ -3534,10 +3562,9 @@ int quickpow(int x,int y,int mod){
     return ans;
 }
 pair<int,int> Cipolla(int n,int mod){
-    if(!n) return make_pair(0,0);
-    //二次非剩余，无解
+    if(n==0) return make_pair(0,0);
     n%=mod;
-    if(quickpow(n,(mod-1)/2,mod)==mod-1) return {-1,-1};
+    if(quickpow(n,(mod-1)/2,mod)==mod-1) return {-1,-1}; // 二次非剩余，无解
     int a=0,w;
     while(1){
         a=rand()%mod;
@@ -3560,7 +3587,7 @@ pair<int,int> Cipolla(int n,int mod){
     result.first=quickpowcomplex(make_pair(a,1),(mod+1)/2,mod).first;
     result.second=(-result.first%mod+mod)%mod;
     if(result.first>result.second) swap(result.first,result.second);
-    return result;
+    return result; // 返回两个根并排好序
 }
 ```
 
@@ -4150,15 +4177,15 @@ signed main(){
 
 用于棋盘状态压缩，每个位置的每个棋子状态（例如（1,1）位置为黑棋）使用mt19937_64赋予一个随机值，最后整个棋盘的状态等于所有棋子的异或和
 
-## 图论
+# 图论
 
-### Cayley 凯莱定理
+## Cayley 凯莱定理
 
 一个完全图不同的生成树的数量有$n^{n-2}$种
 
-### 最小生成树
+## 最小生成树
 
-#### Kruskal
+### Kruskal
 
 时间复杂度$O（mlogm）$
 
@@ -4185,7 +4212,7 @@ int kruskal(){
 }
 ```
 
-### 判负环
+## 判负环
 
 SPFA判负环，一旦一个点入队次数大于等于n，即存在负环，时间复杂度O(nm)
 
@@ -4248,11 +4275,11 @@ const int INF=1e18;
     };
 ```
 
-### 网络流
+## 网络流
 
 网络指一个特殊的有向图G=(V,E)，其与一般有向图的不同之处在于有容量和源汇点（源点s，汇点t）。任意节点净流量为0，且流经该边的流量不得超过该边的容量（边(u,v)的容量记作c(u,v)）。定义f的流量为源点s的净流量。
 
-#### 最大流
+### 最大流
 
 使流量f尽可能大，dinic算法，时间复杂度$O(mn^2)$
 
@@ -4318,7 +4345,7 @@ struct Flow{
 };
 ```
 
-#### 最小割
+### 最小割
 
 网络G=(V,E)的一个割{S,T}，S和T是点的一个划分，$s\in S,t\in T$，{S,T}的容量=${\textstyle \sum_{u\in S} \sum_{v\in T}c(u,v)}$
 
@@ -4328,7 +4355,7 @@ struct Flow{
 
 dep[x]!=-1，表示属于割边，x与s联通
 
-#### 最小费用最大流
+### 最小费用最大流
 
 在网络上对每条边(u,v)给定一个权值w(u,v)，称为费用，含义是单位流量通过(u,v)所花费的代价，对于G所有可能的最大流中总费用最小的为最小费用最大流，SSP算法，$O(nm+n^2f)$，其中f为网络最大流
 
@@ -4417,11 +4444,11 @@ struct MinCostFlow{
 };
 ```
 
-### 差分约束
+## 差分约束
 
 n元一次不等式组，包含n个变量x1……xn，以及m个约束条件，形如xi-xj<=ck，其中ck为常量。令dis0等于0，0向所有的点连一条点权为0的边，dis[i]<=dis[j]+ck，则j到i连一条长度为ck的边。如果存在负环则无解。
 
-### 强连通分量
+## 强连通分量
 
 ```cpp
 function<void(int)> tarjan=[&](int x){
@@ -4456,7 +4483,7 @@ function<void(int)> tarjan=[&](int x){
     }
 ```
 
-### 割点与桥
+## 割点与桥
 
 如果某个顶点u，存在一个子节点v使得lowv>=dfnu，不能回到祖先，则u为割点，根节点需要单独考虑，如果遍历了一个子节点就可以将所有点都遍历完，那根节点就不是割点，否则是割点
 
@@ -4521,9 +4548,9 @@ flag[x]=1，表示fa[x]->x是桥
     }
 ```
 
-### 双联通分量
+## 双联通分量
 
-#### 边双联通分量
+### 边双联通分量
 
 先求出桥，把割点删去，剩下的极大联通子图就是边双联通分量，不能用常规方法存图
 
@@ -4670,7 +4697,7 @@ signed main(){
 }
 ```
 
-#### 点双联通分量
+### 点双联通分量
 
 两个点双最多有一个公共点，且一定是割点。
 
@@ -4758,9 +4785,9 @@ signed main(){
 }
 ```
 
-### 最短路
+## 最短路
 
-#### SPFA
+### SPFA
 
 ```cpp
 queue<int> q;
@@ -4785,7 +4812,7 @@ while(!q.empty()){
 }
 ```
 
-#### dijkstra
+### dijkstra
 
 时间复杂度O(mlogm)
 
@@ -4809,7 +4836,7 @@ while(!q.empty()){
 }
 ```
 
-#### Johnson
+### Johnson
 
 建立虚点0，向每个点连一条边权位0的有向边。先进行一次SPFA，求出虚点0到每个点i的最短路$h[i]$，将每条边$v[i][j]$的边权设置为$v[i][j]+h[i]-h[j]$，边权变为非负数，跑dijkstra，到k的最短路为$dis[k]+h[k]-h[s]$
 
@@ -4909,7 +4936,7 @@ signed main(){
 }
 ```
 
-### 普通环计数
+## 普通环计数
 
 n个点m条边无向图，求简单环数量
 
@@ -4961,7 +4988,7 @@ signed main(){
 }
 ```
 
-### 三元环计数
+## 三元环计数
 
 给所有边定向，从度数小的指向度数大的，度数相同的从编号小的指向编号大的，此时图变成有向无环图DAG。枚举u和u指向的点v，再枚举v指向的点w，检验u，w是否相连，时间复杂度$O(m\sqrt{m})$
 
@@ -5017,7 +5044,7 @@ signed main(){
 }
 ```
 
-### 2-SAT问题
+## 2-SAT问题
 
 n个集合，每个集合有两个元素，已知若干个<a,b>，表示a与b矛盾（a，b不属于同一个集合），需要从每个集合中选择一个元素，判断能否选n个两两不矛盾元素。
 
@@ -5112,7 +5139,7 @@ signed main(){
 }
 ```
 
-### 树链剖分
+## 树链剖分
 
 两次dfs，第一次求出fa，dep，son，sz，第二次求出dfn，top，rnk（dfs序对应的点编号）。
 
@@ -5370,7 +5397,7 @@ struct HLD{
 };
 ```
 
-### 表达式树
+## 表达式树
 
 中序表达式转换为逆波兰式
 
@@ -5390,7 +5417,7 @@ s[i]中：
 
 最后将符号栈中剩余的符号都弹出并压入结果栈
 
-### 树哈希
+## 树哈希
 
 用于判断树是否同构
 
@@ -5476,7 +5503,7 @@ signed main(){
 }
 ```
 
-### 欧拉通路&回路
+## 欧拉通路&回路
 
 Hierholzer
 
@@ -5574,7 +5601,7 @@ void solve(){
 }
 ```
 
-### 最小路径覆盖
+## 最小路径覆盖
 
 最小路径覆盖为用最少的路径走过有向图所有点
 
@@ -5688,13 +5715,13 @@ signed main(){
 }
 ```
 
-### 树的重心
+## 树的重心
 
 最大独立集
 
 重心的所有子树中最大子数树节点数最少（<=n/2)
 
-### 点分治
+## 点分治
 
 路径分为两种，一种经过rt，一种不经过rt
 
@@ -5806,79 +5833,65 @@ signed main(){
 }
 ```
 
-### 点分树
+## 点分树
 
 按照点分治的重心，构建一棵新树，也就是对于每一个找到的重心，将上一层分治的重心设置为他的父节点，得到一棵大小不变，最多$log(n)$层的虚树。
 
 每个点子树大小的和为$nlogn$。
 
-### Kruskal重构树
+## Kruskal重构树
 
 ```cpp
-struct DSU
-{
+struct DSU {
     vector<int> fa;
     int n;
-    DSU(int n)
-    {
+    DSU(int n) {
         this->n = n;
         fa.resize(n + 1);
         for (int i = 0; i <= n; i++)
             fa[i] = i;
     }
-    int find(int x)
-    {
+    int find(int x) {
         return (fa[x] == x ? x : fa[x] = find(fa[x]));
     }
 };
-struct edge
-{
+struct edge {
     int x, y, k;
 };
-struct Ex_kruskal
-{
+struct Ex_kruskal {
     int n;
     vector<vector<int>> fa;
     vector<int> val;
     vector<int> dep;
     DSU dsu;
-    int LCA(int x, int y)
-    {
+    int LCA(int x, int y) {
         // 不连通返回-1
         if (dsu.find(x) != dsu.find(y))
             return -1;
         if (dep[x] < dep[y])
             swap(x, y);
-        for (int i = 20; i >= 0; i--)
-        {
-            if (dep[fa[x][i]] >= dep[y])
-            {
+        for (int i = 20; i >= 0; i--) {
+            if (dep[fa[x][i]] >= dep[y]) {
                 x = fa[x][i];
             }
         }
-        for (int i = 20; i >= 0; i--)
-        {
-            if (fa[x][i] != fa[y][i])
-            {
+        for (int i = 20; i >= 0; i--) {
+            if (fa[x][i] != fa[y][i]) {
                 x = fa[x][i];
                 y = fa[y][i];
             }
         }
         return val[fa[x][0]];
     }
-    Ex_kruskal(int &_n, vector<edge> &_v) : n(_n), dsu(2 * _n), fa(2 * _n + 1, vector<int>(21)), val(2 * _n + 1), dep(2 * _n + 1)
-    {
-        sort(_v.begin(), _v.end(), [&](edge &a, edge &b)
-             { return a.k < b.k; });
+    Ex_kruskal(int &_n, vector<edge> &_v) : n(_n), dsu(2 * _n), fa(2 * _n + 1, vector<int>(21)), val(2 * _n + 1), dep(2 * _n + 1) {
+        sort(_v.begin(), _v.end(), [&](edge &a, edge &b) { return a.k < b.k; });
         vector<vector<int>> v(2 * _n + 1);
         vector<bool> vis(2 * _n + 1);
         int cnt = 1;
-        for (int i = 0; i < _v.size(); i++)
-        {
+        for (int i = 0; i < _v.size(); i++) {
             int fax = dsu.find(_v[i].x);
             int fay = dsu.find(_v[i].y);
-            if (fax != fay)
-            {
+            if (fax != fay) {
                 v[fax].emplace_back(n + cnt);
                 v[fay].emplace_back(n + cnt);
                 v[n + cnt].emplace_back(fax);
@@ -5888,29 +5901,24 @@ struct Ex_kruskal
                 dsu.fa[fay] = n + cnt;
                 cnt++;
             }
-            if (cnt == n)
-            {
+            if (cnt == n) {
                 break;
             }
         }
-        auto dfs = [&](auto &&self, int x, int father) -> void
-        {
+        auto dfs = [&](auto &&self, int x, int father) -> void {
             vis[x] = 1;
             dep[x] = dep[father] + 1;
             fa[x][0] = father;
-            for (int i = 1; i <= 20; i++)
-            {
+            for (int i = 1; i <= 20; i++) {
                 fa[x][i] = fa[fa[x][i - 1]][i - 1];
             }
-            for (int &to : v[x])
-            {
+            for (int &to : v[x]) {
                 if (to == father)
                     continue;
                 self(self, to, x);
             }
         };
-        for (int i = 2 * n - 1; i > 0; i--)
-        {
+        for (int i = 2 * n - 1; i > 0; i--) {
             if (!vis[i])
                 dfs(dfs, i, 0);
         }
@@ -5920,9 +5928,9 @@ struct Ex_kruskal
 
 
 
-## 计算几何
+# 计算几何
 
-### 二维几何
+## 二维几何
 
 ```cpp
 struct Point{
@@ -6611,15 +6619,15 @@ struct halfplanes {
 };
 ```
 
-### 三维几何
+## 三维几何
 
 ```cpp
 // to be added...
 ```
 
-## 博弈论
+# 博弈论
 
-### SG函数
+## SG函数
 
 SG(x)，x是游戏的状态，SG=0，先手必败，否则先手必胜
 
@@ -6627,9 +6635,9 @@ SG(x)，x是游戏的状态，SG=0，先手必败，否则先手必胜
 
 一个游戏的SG函数值等于各个游戏SG函数值的nim和（异或和）
 
-## dp
+# dp
 
-### 数位dp
+## 数位dp
 
 给定区间[l,r]，问区间满足条件的数有多少个，cal(r)-cal(l-1)
 
@@ -6682,9 +6690,9 @@ signed main(){
 }
 ```
 
-## 随机算法
+# 随机算法
 
-### 模拟退火
+## 模拟退火
 
 $T$：温度
 
@@ -6763,20 +6771,20 @@ signed main(){
 }
 ```
 
-## 平板电视
+# 平板电视
 
 ```cpp
 #include<bits/extc++.h>
 using namespace __gnu_pbds;
 ```
 
-#### 拉链法哈希
+# 拉链法哈希
 
 ```cpp
 cc_hash_table <int,int> f;
 ```
 
-#### 红黑树
+# 红黑树
 
 ```cpp
 __gnu_pbds::tree<Key, Mapped, Cmp_Fn = std::less<Key>, Tag = rb_tree_tag,
@@ -6828,7 +6836,7 @@ if(it==tr.end()) continue;
 it->first;
 ```
 
-## 快读快写
+# 快读快写
 
 ```cpp
 void get(int &x){
@@ -6859,7 +6867,7 @@ void print(__int128 x){
 }
 ```
 
-## 火车头
+# 火车头
 
 ```cpp
 #define fastcall __attribute__((optimize("-O3")))
@@ -6906,6 +6914,4 @@ void print(__int128 x){
 #pragma GCC optimize("-fexpensive-optimizations")
 #pragma GCC optimize("inline-functions-called-once")
 #pragma GCC optimize("-fdelete-null-pointer-checks")
-
 ```
-
