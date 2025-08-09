@@ -2952,11 +2952,8 @@ ll CRT(vector<int>& a, vector<int>& r) {
 }
 ```
 
-<<<<<<< HEAD
-=======
 ### 扩展CRT
 
->>>>>>> 8eb5da9d56921f9fcc6080ab57630a6371fd7b2d
 
 
 ## 切比雪夫距离与曼哈顿距离之间的转化
