@@ -2879,13 +2879,10 @@ a^{(b\text{ mod}\varphi(m))+\varphi(m)}, & \text{if } \gcd(a, m) \neq 1 \text{ a
 ## 扩展欧几里德
 
 ```cpp
-<<<<<<< HEAD
-//ax+by=gcd(a,b)
-=======
+// ax+by=gcd(a,b)
 // mod非素数，扩展欧几里得
 // ax+by = gcd(a,b)
 // 返回 d=gcd(a,b);和对应于等式ax+by=d中的x,y
->>>>>>> 8eb5da9d56921f9fcc6080ab57630a6371fd7b2d
 int exgcd(int a,int b,int &x,int &y){
     if(b==0){
         x=1,y=0;
@@ -3614,24 +3611,24 @@ using Poly = Polynomial<Z>;
 - XOR 逆变换最后统一乘 $1/N$，逆元实现；OR / AND 不需要归一化。
 
 ```c++
-template <int MDD>
+template <int MOD>
 struct FWT {
     enum class Type { OR, AND, XOR };
 
     static inline int add(int a, int b) {
         a += b;
-        if (a >= MDD) a -= MDD;
+        if (a >= MOD) a -= MOD;
         return a;
     }
     static inline int sub(int a, int b) {
         a -= b;
-        if (a < 0) a += MDD;
+        if (a < 0) a += MOD;
         return a;
     }
     static inline int mul(int a, int b) {
-        return 1LL * a * b % MDD;
+        return 1LL * a * b % MOD;
     }
-    
+    // 只有 XOR 需要求逆元
     static inline int pow(int a, ll e) {
         ll r = 1;
         while (e) {
@@ -3676,7 +3673,7 @@ struct FWT {
         }
         // xor 逆变换，归一化，所有元素乘 1/n = (1/2)^{log2 n}
         if (type == Type::XOR && opt == -1) {
-            const int inv2 = (MDD + 1) / 2;
+            const int inv2 = (MOD + 1) / 2;
             int k = __builtin_ctz(n);  // log2(n)
             int invn = pow(inv2, k);   // (1/2)^k
             for (int& x : a) {
@@ -3693,7 +3690,7 @@ struct FWT {
         }
     }
 
-    // 卷积
+    // 卷积（OR / AND / XOR）
     static vector<int> convolution(vector<int> a, vector<int> b, Type type) {
         // 需要 A、B 长度相等且为 2 的幂；若需要，也可在外部补零到 2^k
         assert(a.size() == b.size());
@@ -3707,7 +3704,7 @@ struct FWT {
     }
 };
 
-using fwt = FWT<MOD>;
+using fwt = FWT<998244353>;
 
 int main() {
     int n; cin >> n;
