@@ -3180,7 +3180,7 @@ public:
 using Poly = Polynomial<double, std::complex>;
 ```
 
-### 快速数论变换 FNTT
+### 快速数论变换 NTT
 
 - NTT是**整数域上的快速傅里叶变换**，用于高效求解模意义下的多项式卷积。
 - 要求模数 $P$ 是形如 $k \cdot 2^n + 1$ 的质数（如 $P = 998244353 = 119 \cdot 2^{23} + 1$），且有原根 $g$。
@@ -3592,6 +3592,140 @@ struct ModInt {
 using Z = ModInt<ll, 998244353>;
 using Poly = Polynomial<Z>;
 ```
+
+### 快速沃尔什变换 FWT
+
+**适用范围**：（配合二进制状态压缩）
+
+- 按位运算卷积：$C[i]=\sum_{j\oplus k=i} A[j]B[k]$，其中 $\oplus$ 是二元位运算的一种
+- SOS DP / 子集-超集和：子集/超集 zeta & Möbius 变换，与 FWT_or / FWT_and 等价实现。
+- 布尔立方体上的运算：在 $\{0,1\}^m$ 上的线性变换、计数、期望、异或型 DP 等。
+- 与 NTT 不同：FWT 的“长度”是按位数 $n$ 的 $2^N$，服务于位掩码/集合运算；不是多项式的循环/线性卷积。
+
+**复杂度**：
+
+- 单次变换 $O(N\log N)$，其中 $N=2^n$
+- 卷积（正变换 A,B → 按位乘 → 逆变换）：$O(n\log n)$（三个变换 + $O(n)$ 点乘）
+- 实战规模：常见 $n\le 20$（$N\le 2^{20}$）较稳；$n=22$ 需注意常数与内存。
+
+**模板注意事项**：
+
+- 长度必须是 $N=2^n$，否则需要补 0 到最近的 $2^k$；
+- XOR 逆变换最后统一乘 $1/N$，逆元实现；OR / AND 不需要归一化。
+
+```c++
+template <int MDD>
+struct FWT {
+    enum class Type { OR, AND, XOR };
+
+    static inline int add(int a, int b) {
+        a += b;
+        if (a >= MDD) a -= MDD;
+        return a;
+    }
+    static inline int sub(int a, int b) {
+        a -= b;
+        if (a < 0) a += MDD;
+        return a;
+    }
+    static inline int mul(int a, int b) {
+        return 1LL * a * b % MDD;
+    }
+    
+    static inline int pow(int a, ll e) {
+        ll r = 1;
+        while (e) {
+            if (e & 1) r = mul(r, a);
+            a = mul(a, a);
+            e >>= 1;
+        }
+        return (int)r;
+    }
+
+    // FWT 就地变换: opt = 1 为正变换，opt = -1 为逆变换
+    static void transform(vector<int>& a, Type type, int opt) {
+        const int n = a.size();
+        for (int len = 1; len < n; len <<= 1) {
+            for (int i = 0; i < n; i += (len << 1)) {
+                for (int j = 0; j < len; j++) {
+                    int &x = a[i + j], &y = a[i + j + len];
+                    if (type == Type::OR) {
+                        // forward: (x, y) -> (x, x+y)
+                        // inverse: (x, y) -> (x, y-x)
+                        if (opt == 1) {
+                            y = add(y, x);
+                        } else {
+                            y = sub(y, x);
+                        }
+                    } else if (type == Type::AND) {
+                        // forward: (x, y) -> (x+y, y)
+                        // inverse: (x, y) -> (x-y, y)
+                        if (opt == 1) {
+                            x = add(x, y);
+                        } else {
+                            x = sub(x, y);
+                        }
+                    } else if (type == Type::XOR) {
+                        // (x, y) -> (x+y, x-y) ；逆变换后再整体乘 1/n
+                        int u = x, v = y;
+                        x = add(u, v);
+                        y = sub(u, v);
+                    }
+                }
+            }
+        }
+        // xor 逆变换，归一化，所有元素乘 1/n = (1/2)^{log2 n}
+        if (type == Type::XOR && opt == -1) {
+            const int inv2 = (MDD + 1) / 2;
+            int k = __builtin_ctz(n);  // log2(n)
+            int invn = pow(inv2, k);   // (1/2)^k
+            for (int& x : a) {
+                x = mul(x, invn);
+            }
+        }
+    }
+
+    // 点乘
+    static void pointwise(vector<int>& a, const vector<int>& b) {
+        const int n = a.size();
+        for (int i = 0; i < n; ++i) {
+            a[i] = mul(a[i], b[i]);
+        }
+    }
+
+    // 卷积
+    static vector<int> convolution(vector<int> a, vector<int> b, Type type) {
+        // 需要 A、B 长度相等且为 2 的幂；若需要，也可在外部补零到 2^k
+        assert(a.size() == b.size());
+        assert((a.size() & (a.size() - 1)) == 0);  // 检查是否为 2 的幂
+
+        transform(a, type, 1);   // 正变换
+        transform(b, type, 1);   // 正变换
+        pointwise(a, b);         // 点乘
+        transform(a, type, -1);  // 逆变换
+        return a;
+    }
+};
+
+using fwt = FWT<MOD>;
+
+int main() {
+    int n; cin >> n;
+    int N = 1 << n;  // 需要保证长度是2的幂次，否则补0
+    vector<int> a(N), b(N);
+    for (int i = 0; i < N; i++) cin >> a[i];
+    for (int i = 0; i < N; i++) cin >> b[i];
+
+    auto OR = fwt::convolution(a, b, fwt::Type::OR);
+    auto AND = fwt::convolution(a, b, fwt::Type::AND);
+    auto XOR = fwt::convolution(a, b, fwt::Type::XOR);
+
+    for (int i = 0; i < N; i++) cout << OR[i] << " \n"[i == N - 1];
+    //...
+}
+```
+
+
 
 ## 求n!质因数p的个数
 
