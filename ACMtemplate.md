@@ -2605,6 +2605,17 @@ $$
 
 n&m==m,$C_n^m$为奇数
 
+## 上指标求和
+
+$$
+\Sigma_{i=0}^n{i\choose k}={n+1\choose k+1}
+$$
+
+考虑添加一个虚拟的第$k+1$个元素，枚举这个元素所占据的位置为$i$，则前$k$个元素应在前$i-1$个位置排列，$i$的范围为$[1,n+1]$，则有
+$$
+{n+1\choose k+1}=\Sigma_{i=1}^{n+1}{i-1\choose k}=\Sigma_{i=0}^n{i\choose k}
+$$
+
 ## 二项式反演
 
 $$
@@ -6059,17 +6070,28 @@ signed main(){
 ## Kruskal重构树
 
 ```cpp
-struct DSU {
-    vector<int> fa;
+struct DSU{
+    vector<int> fa, sz;
     int n;
-    DSU(int n) {
-        this->n = n;
+    DSU(int n) : n(n){
         fa.resize(n + 1);
-        for (int i = 0; i <= n; i++)
+        sz.resize(n + 1, 1);
+        for (int i = 1; i <= n; i++){
             fa[i] = i;
+        }
     }
-    int find(int x) {
-        return (fa[x] == x ? x : fa[x] = find(fa[x]));
+    int find(int a){
+        return fa[a] == a ? a : fa[a] = find(fa[a]);
+    }
+    void merge(int x, int y){
+        int fx = find(x), fy = find(y);
+        if (fx == fy)
+            return;
+        if (sz[fx] < sz[fy])
+            swap(fx, fy);
+        fa[fy] = fx;
+        sz[fx] += sz[fy];
+        return;
     }
 };
 struct edge {
@@ -6143,7 +6165,49 @@ struct Ex_kruskal {
 };
 ```
 
+## 最近公共祖先
 
+```cpp
+vector<int> dep(n + 1, 0);
+vector<vector<int>> fa(n + 1, vector<int>(21));
+auto dfs = [&](auto &&self, int x, int father) -> void
+{
+    dep[x] = dep[father] + 1;
+    fa[x][0] = father;
+    for (int i = 1; i <= 20; i++)
+    {
+        fa[x][i] = fa[fa[x][i - 1]][i - 1];
+    }
+    for (int &p : v[x])
+    {
+        if (p == father)
+            continue;
+        self(self, p, x);
+    }
+};
+auto LCA = [&](int x, int y)
+{
+    if (dep[x] < dep[y])
+        swap(x, y);
+    for (int i = 20; i >= 0; i--)
+    {
+        if (dep[fa[x][i]] >= dep[y])
+            x = fa[x][i];
+    }
+    if (x == y)
+        return x;
+    for (int i = 20; i >= 0; i--)
+    {
+        if (fa[x][i] != fa[y][i])
+        {
+            x = fa[x][i];
+            y = fa[y][i];
+        }
+    }
+    return fa[x][0];
+};
+dfs(dfs, 1, 0);
+```
 
 # 计算几何
 
