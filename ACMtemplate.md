@@ -3180,7 +3180,10 @@ using Poly = Polynomial<double, std::complex>;
 ### 快速数论变换 NTT
 
 - NTT是**整数域上的快速傅里叶变换**，用于高效求解模意义下的多项式卷积。
-- 要求模数 $P$ 是形如 $k \cdot 2^n + 1$ 的质数（如 $P = 998244353 = 119 \cdot 2^{23} + 1$），且有原根 $g$。
+- 要求模数 $P$ 是形如 $k \cdot 2^n + 1$ 的质数（如 $P = 998244353 = 119 \cdot 2^{23} + 1$），且有原根 $g$；如果模数为$10^9+7$，需要**三模数 NTT + CRT**， 在 3 个 NTT 友好质数下分别做 NTT 卷积，再用 Garner/CRT 合并回 $10^9+7$。常用 3 个 NTT 质数：
+  - $P_1=167772161=5\cdot 2^{25}+1$
+  - $P_2=469762049=7\cdot 2^{26}+1$
+  - $P_3=1224736769=73\cdot 2^{24}+1$
 - 单位根：$w = g^{(P-1)/n} \pmod{P}$。
 
 ```c++
@@ -3426,6 +3429,7 @@ public:
         return (deriv() * inv(m)).integr().mod(m);
     }
 
+    // exp(f(x)): 1 + f(x) + f(x)^2/2! + f(x)^3/3! + ...
     Polynomial exp(int m = -1) const {
         m = m < 0 ? self.size() : m;
         Polynomial p{1};
