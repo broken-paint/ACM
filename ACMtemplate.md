@@ -2864,6 +2864,7 @@ void rebuild(){
 ```
 
 ```cpp
+//flag表示数组里面有没有0
 int querykth(int k){
     if(flag){
         if(k==1) return 0;
