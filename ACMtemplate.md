@@ -6114,6 +6114,7 @@ struct Ex_kruskal {
                 x = fa[x][i];
             }
         }
+      	if(x==y) return x;
         for (int i = 20; i >= 0; i--) {
             if (fa[x][i] != fa[y][i]) {
                 x = fa[x][i];
@@ -6167,6 +6168,10 @@ struct Ex_kruskal {
 
 ## 最近公共祖先
 
+### 倍增
+
+时间复杂度$O(logn)$
+
 ```cpp
 vector<int> dep(n + 1, 0);
 vector<vector<int>> fa(n + 1, vector<int>(21));
@@ -6208,6 +6213,99 @@ auto LCA = [&](int x, int y)
 };
 dfs(dfs, 1, 0);
 ```
+
+### tarjan
+
+预处理$O(n+q)$，询问$O(1)$
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+struct DSU{
+    vector<int> fa;
+    int n;
+    DSU(int n){
+        this->n=n;
+        fa=vector<int>(n+1);
+        for(int i=0;i<=n;i++) fa[i]=i;
+    }
+    int find(int x){
+        return fa[x]==x?x:fa[x]=find(fa[x]);
+    }
+    bool merge(int x,int y){
+        int fax=find(x);
+        int fay=find(y);
+        if(fax==fay) return 0;
+        fa[fax]=fay;
+        return 1;
+    }
+};
+void solve(){
+    int n,m,s;
+    cin>>n>>m>>s;
+    vector<vector<int>> v(n+1);
+    for(int i=1;i<n;i++){
+        int x,y;
+        cin>>x>>y;
+        v[x].push_back(y);
+        v[y].push_back(x);
+    }
+    DSU dsu(n);
+    vector<vector<pair<int,int>>> query(n+1);
+    vector<int> lca(m);
+    for(int i=0;i<m;i++){
+        int x,y;
+        cin>>x>>y;
+        query[x].emplace_back(y,i);
+        query[y].emplace_back(x,i);
+    }
+    vector<int> dfn(n+1),low(n+1);
+    stack<int> st;
+    vector<bool> instack(n+1);
+    int cnt=0;
+    function<void(int)> tarjan=[&](int x){
+        dfn[x]=low[x]=++cnt;
+        st.push(x);
+        instack[x]=1;
+        for(int &p:v[x]){
+            if(!dfn[p]){
+                tarjan(p);
+                low[x]=min(low[x],low[p]);
+                dsu.merge(p,x);
+            }else if(instack[p]){
+                low[x]=min(low[x],dfn[p]);
+            }
+        }
+        if(low[x]==dfn[x]){
+            while(!st.empty()&&st.top()!=x){
+                int f=st.top();
+                st.pop();
+                instack[f]=0;
+            }
+            st.pop();
+            instack[x]=0;
+        }
+        for(auto &[y,id]:query[x]){
+            if(lca[id]||!dfn[y]) continue;
+            lca[id]=dsu.find(y);
+        }
+    };
+    tarjan(s);
+    for(int i=0;i<m;i++){
+        cout<<lca[i]<<"\n";
+    }
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
+
 
 # 计算几何
 
