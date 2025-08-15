@@ -6377,6 +6377,8 @@ struct Point{
     double getangle(const Point &e) const{
         return fabs(atan2l(*this^e,*this*e));
     }
+    Point(double x,double y):x(x),y(y){}
+    Point(){}
 };
 struct Line{
     //过x点，方向向量为y
@@ -6393,6 +6395,18 @@ struct Line{
     }
     inline double distancetopoint(const Point &e) const{
         return fabs((e-x)^y)/y.norm();
+    }
+};
+struct Segment{
+    //过x,y
+    Point x,y;
+    Segment(Point a,Point b):x(a),y(b){}
+    inline double distancetopoint(const Point &e) const{
+        Point l=y-x;
+        double t=l*(e-x)/(l*l);
+        if(t<0) t=0;
+        else if(t>1) t=1;
+        return (e-(x+l*t)).norm();
     }
 };
 //要先getConvex求凸包，其他的才能用
