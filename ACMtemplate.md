@@ -7016,7 +7016,88 @@ struct halfplanes {
 ## 三维几何
 
 ```cpp
-// to be added...
+const double EPS = 1e-8;
+const double PI = acos(-1.0);
+
+int sgn(double x) {
+    // return (x > EPS) - (x < -EPS);
+    if (fabs(x) < EPS) return 0;
+    return x < 0 ? -1 : 1;
+}
+
+template <typename T>
+struct Point3 {
+    T x, y, z;
+    constexpr Point3(T x = 0, T y = 0, T z = 0) : x(x), y(y), z(z) {}
+
+    constexpr Point3 operator+(const Point3& p) const { return Point3(x + p.x, y + p.y, z + p.z); }
+    constexpr Point3 operator-(const Point3& p) const { return Point3(x - p.x, y - p.y, z - p.z); }
+    constexpr Point3 operator*(const T& k) const { return Point3(x * k, y * k, z * k); }
+    constexpr Point3 operator/(const T& k) const { return Point3(x / k, y / k, z / k); }
+    Point3& operator+=(const Point3& p) { x += p.x; y += p.y; z += p.z; return *this; }
+    Point3& operator-=(const Point3& p) { x -= p.x; y -= p.y; z -= p.z; return *this; }
+    Point3& operator*=(const T& k) { x *= k; y *= k; z *= k; return *this; }
+    Point3& operator/=(const T& k) { x /= k; y /= k; z /= k; return *this; }
+
+    // dot product and cross product
+    constexpr T operator*(const Point3& p) const { return x * p.x + y * p.y + z * p.z; }
+    constexpr Point3 operator^(const Point3& p) const {
+        return Point3(y * p.z - z * p.y, z * p.x - x * p.z, x * p.y - y * p.x);
+    }
+
+    bool operator==(const Point3& p) const {
+        return sgn(x - p.x) == 0 && sgn(y - p.y) == 0 && sgn(z - p.z) == 0;
+    }
+    bool operator!=(const Point3& p) const { return !(*this == p); }
+    bool operator<(const Point3& p) const {
+        if (sgn(x - p.x) != 0) return x < p.x;
+        if (sgn(y - p.y) != 0) return y < p.y;
+        return sgn(z - p.z) < 0;
+    }
+
+    constexpr T dis2(const Point3& p) const {
+        return (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) + (z - p.z) * (z - p.z);
+    }
+    auto dis(const Point3& p) const {
+        if constexpr (std::is_same_v<T, long double>) return sqrtl(dis2(p));
+        else return sqrt(dis2(p));
+    }
+
+    T len2() const { return x * x + y * y + z * z; }
+    auto len() const {
+        if constexpr (std::is_same_v<T, long double>) return sqrtl(len2());
+        else return sqrt(len2());
+    }
+
+    // angle (radians or degrees) ∠APB: return [0,π]
+    static double angle(const Point3& a, const Point3& p, Point3& b, bool rad = true) {
+        // PA*PB=|PA||PB|cos(theta)
+        double costh = (a - p) * (b - p) / (p.dis(a) * p.dis(b));
+        costh = std::clamp(costh, -1.0, 1.0);  // avoid precision issues
+        if (rad) return acos(costh);
+        return acos(costh) * 180.0 / PI;  // convert to degrees
+    }
+
+    // normalize the vector to length k
+    Point3 norm(double k = 1.0) const {
+        double l = len();
+        if (!sgn(l)) return *this;  // origin
+        k /= l;
+        return Point3(x * k, y * k, z * k);
+    }
+
+    // IO
+    friend std::istream& operator>>(std::istream& is, Point3& p) {
+        return is >> p.x >> p.y >> p.z;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const Point3& p) {
+        return os << p.x << ' ' << p.y << ' ' << p.z;
+    }
+};
+
+using Point = Point3<double>;
+// using Point = Point3<long double>;
+// using Point = Point3<long long>;
 ```
 
 # 博弈论
