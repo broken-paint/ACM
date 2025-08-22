@@ -6306,6 +6306,135 @@ signed main(){
 }
 ```
 
+## 图的匹配
+
+### 一般图最大匹配
+
+- 带花树算法（Blossom Algorithm）$O(|V||E|^2)$
+- 顶点索引 `0-indexed`；`g.add(u,v)` 双向边；
+- 调用 `g.findMatching` 返回匹配数组，`match[u] = v` : 表示顶点 `u` 和顶点 `v` 相互匹配；`match[u] = -1`: 表示顶点 `u` 是未匹配点。可用 `std::count_if` 易得最大匹配对数。
+
+```cpp
+struct Graph {
+    int n;
+    vector<vector<int>> g;
+    Graph(int n) : n(n), g(n) {}
+    void add(int u, int v) {
+        g[u].push_back(v);
+        g[v].push_back(u);
+    }
+
+    vector<int> findMatching() {
+        vector<int> match(n, -1), vis(n), link(n), f(n), dep(n);
+        // disjoint set union
+        auto find = [&](int u) {
+            while (f[u] != u)
+                u = f[u] = f[f[u]];
+            return u;
+        };
+        auto lca = [&](int u, int v) {
+            u = find(u);
+            v = find(v);
+            while (u != v) {
+                if (dep[u] < dep[v])
+                    std::swap(u, v);
+                u = find(link[match[u]]);
+            }
+            return u;
+        };
+        queue<int> que;
+        auto blossom = [&](int u, int v, int p) {
+            while (find(u) != p) {
+                link[u] = v;
+                v = match[u];
+                if (vis[v] == 0) {
+                    vis[v] = 1;
+                    que.push(v);
+                }
+                f[u] = f[v] = p;
+                u = link[v];
+            }
+        };
+        // find an augmenting path starting from u and augment (if exist)
+        auto augment = [&](int u) {
+            while (!que.empty()) que.pop();
+            std::iota(f.begin(), f.end(), 0);
+            // vis = 0 corresponds to inner vertices
+            // vis = 1 corresponds to outer vertices
+            std::fill(vis.begin(), vis.end(), -1);
+            que.push(u);
+            vis[u] = 1;
+            dep[u] = 0;
+            while (!que.empty()) {
+                int u = que.front();
+                que.pop();
+                for (auto v : g[u]) {
+                    if (vis[v] == -1) {
+                        vis[v] = 0;
+                        link[v] = u;
+                        dep[v] = dep[u] + 1;
+                        // found an augmenting path
+                        if (match[v] == -1) {
+                            for (int x = v, y = u, temp; y != -1; x = temp, y = x == -1 ? -1 : link[x]) {
+                                temp = match[y];
+                                match[x] = y;
+                                match[y] = x;
+                            }
+                            return;
+                        }
+                        vis[match[v]] = 1;
+                        dep[match[v]] = dep[u] + 2;
+                        que.push(match[v]);
+                    } else if (vis[v] == 1 && find(v) != find(u)) {
+                        // found a blossom
+                        int p = lca(u, v);
+                        blossom(u, v, p);
+                        blossom(v, u, p);
+                    }
+                }
+            }
+        };
+        // find a maximal matching greedily (decrease constant)
+        auto greedy = [&]() {
+            for (int u = 0; u < n; ++u) {
+                if (match[u] != -1) continue;
+                for (auto v : g[u]) {
+                    if (match[v] == -1) {
+                        match[u] = v;
+                        match[v] = u;
+                        break;
+                    }
+                }
+            }
+        };
+        greedy();
+        for (int u = 0; u < n; ++u) {
+            if (match[u] == -1) augment(u);
+        }
+        return match;
+    }
+};
+
+void solve() {
+    int n, m;
+    cin >> n >> m;
+    Graph g(n);
+    for (int i = 0; i < m; i++) {
+        int u, v;
+        cin >> u >> v;
+        u--, v--;
+        g.add(u, v);
+    }
+
+    auto match = g.findMatching();
+    int cnt = count_if(match.begin(), match.end(), [](int x) { return x != -1; }) / 2;
+    cout << cnt << "\n";
+    for (int i = 0; i < match.size(); i++) {
+        cout << match[i] + 1 << " \n"[i == match.size() - 1];
+    }
+}
+```
+
 
 
 # 计算几何
@@ -7016,7 +7145,88 @@ struct halfplanes {
 ## 三维几何
 
 ```cpp
-// to be added...
+const double EPS = 1e-8;
+const double PI = acos(-1.0);
+
+int sgn(double x) {
+    // return (x > EPS) - (x < -EPS);
+    if (fabs(x) < EPS) return 0;
+    return x < 0 ? -1 : 1;
+}
+
+template <typename T>
+struct Point3 {
+    T x, y, z;
+    constexpr Point3(T x = 0, T y = 0, T z = 0) : x(x), y(y), z(z) {}
+
+    constexpr Point3 operator+(const Point3& p) const { return Point3(x + p.x, y + p.y, z + p.z); }
+    constexpr Point3 operator-(const Point3& p) const { return Point3(x - p.x, y - p.y, z - p.z); }
+    constexpr Point3 operator*(const T& k) const { return Point3(x * k, y * k, z * k); }
+    constexpr Point3 operator/(const T& k) const { return Point3(x / k, y / k, z / k); }
+    Point3& operator+=(const Point3& p) { x += p.x; y += p.y; z += p.z; return *this; }
+    Point3& operator-=(const Point3& p) { x -= p.x; y -= p.y; z -= p.z; return *this; }
+    Point3& operator*=(const T& k) { x *= k; y *= k; z *= k; return *this; }
+    Point3& operator/=(const T& k) { x /= k; y /= k; z /= k; return *this; }
+
+    // dot product and cross product
+    constexpr T operator*(const Point3& p) const { return x * p.x + y * p.y + z * p.z; }
+    constexpr Point3 operator^(const Point3& p) const {
+        return Point3(y * p.z - z * p.y, z * p.x - x * p.z, x * p.y - y * p.x);
+    }
+
+    bool operator==(const Point3& p) const {
+        return sgn(x - p.x) == 0 && sgn(y - p.y) == 0 && sgn(z - p.z) == 0;
+    }
+    bool operator!=(const Point3& p) const { return !(*this == p); }
+    bool operator<(const Point3& p) const {
+        if (sgn(x - p.x) != 0) return x < p.x;
+        if (sgn(y - p.y) != 0) return y < p.y;
+        return sgn(z - p.z) < 0;
+    }
+
+    constexpr T dis2(const Point3& p) const {
+        return (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) + (z - p.z) * (z - p.z);
+    }
+    auto dis(const Point3& p) const {
+        if constexpr (std::is_same_v<T, long double>) return sqrtl(dis2(p));
+        else return sqrt(dis2(p));
+    }
+
+    T len2() const { return x * x + y * y + z * z; }
+    auto len() const {
+        if constexpr (std::is_same_v<T, long double>) return sqrtl(len2());
+        else return sqrt(len2());
+    }
+
+    // angle (radians or degrees) ∠APB: return [0,π]
+    static double angle(const Point3& a, const Point3& p, Point3& b, bool rad = true) {
+        // PA*PB=|PA||PB|cos(theta)
+        double costh = (a - p) * (b - p) / (p.dis(a) * p.dis(b));
+        costh = std::clamp(costh, -1.0, 1.0);  // avoid precision issues
+        if (rad) return acos(costh);
+        return acos(costh) * 180.0 / PI;  // convert to degrees
+    }
+
+    // normalize the vector to length k
+    Point3 norm(double k = 1.0) const {
+        double l = len();
+        if (!sgn(l)) return *this;  // origin
+        k /= l;
+        return Point3(x * k, y * k, z * k);
+    }
+
+    // IO
+    friend std::istream& operator>>(std::istream& is, Point3& p) {
+        return is >> p.x >> p.y >> p.z;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const Point3& p) {
+        return os << p.x << ' ' << p.y << ' ' << p.z;
+    }
+};
+
+using Point = Point3<double>;
+// using Point = Point3<long double>;
+// using Point = Point3<long long>;
 ```
 
 # 博弈论
