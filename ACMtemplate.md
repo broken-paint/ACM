@@ -2524,6 +2524,41 @@ int phi(int n){
 }
 ```
 
+
+
+## 线性筛莫比乌斯函数
+
+```cpp
+struct EulerSieve{
+    int n;
+    vector<int> prime;
+    vector<bool> isprime;
+    vector<int> mu;
+    
+    EulerSieve(int n) : n(n), isprime(n + 1, true), mu(n + 1){
+        isprime[0] = isprime[1] = false;
+        mu[0] = 0;
+        mu[1] = 1;
+        for (int i = 2; i <= n; i++){
+            if (isprime[i]){
+                prime.push_back(i);
+                mu[i] = -1;
+            }
+            for (int &p : prime){
+                if (i * p > n)
+                    break;
+                isprime[i * p] = false;
+                if (i % p == 0)
+                    break;
+                mu[i * p] = -mu[i];
+            }
+        }
+    }
+};
+```
+
+
+
 ## 莫比乌斯函数
 
 $$
