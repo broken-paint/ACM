@@ -2475,35 +2475,38 @@ struct EulerSieve{
 小于等于n且与n互质的正整数数量
 
 ```cpp
-struct EulerSieve{
-    vector<int> prime;
-    vector<bool> isPrime;
-    vector<int> phi;
+struct EulerSieve {
     int n;
-    EulerSieve(int n){
-        this->n=n;
-        isPrime=vector<bool>(n+1,1);
-        phi=vector<int>(n+1);
-        isPrime[1]=0;
-        for(int i=2;i<=n;i++){
-            if(isPrime[i]){
+    vector<int> prime;
+    vector<bool> isprime;
+    vector<int> phi;
+
+    EulerSieve(int n) : n(n), isprime(n + 1, true), phi(n + 1) {
+        isprime[0] = isprime[1] = false;
+        phi[0] = 0;
+        phi[1] = 1;
+
+        for (int i = 2; i <= n; i++) {
+            if (isprime[i]) {
                 prime.push_back(i);
-                phi[i]=i-1;
+                phi[i] = i - 1;
             }
-            for(int &p:prime){
-                if(i*p>n) break;
-                isPrime[i*p]=0;
-                if(i%p==0){
-                    phi[i*p]=phi[i]*p;
+            for (int &p : prime) {
+                if (i * p > n) break;
+                isprime[i * p] = false;
+                if (i % p == 0) {
+                    phi[i * p] = phi[i] * p;
                     break;
-                }else{
-                    phi[i*p]=phi[i]*phi[p];
+                } else {
+                    phi[i * p] = phi[i] * (p - 1);
                 }
             }
         }
     }
 };
 ```
+
+
 
 ## 直接求欧拉函数
 
