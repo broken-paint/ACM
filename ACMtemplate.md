@@ -2618,7 +2618,7 @@ struct Comb{
 };
 ```
 
-## Lucas
+## 卢卡斯定理
 
 用于求解问题规模很大，而模数是一个不大的质数的时候的组合数问题，p为质数
 $$
@@ -2642,6 +2642,112 @@ m、n按p进制展开
 $$
 
 n&m==m,$C_n^m$为奇数
+
+```cpp
+// template <int P>
+struct Lucas {
+    int P;  // prime mod
+    vector<i64> fac, ifac;
+
+    Lucas(int p) : P(p) {
+        fac.resize(p);
+        ifac.resize(p);
+        fac[0] = ifac[0] = 1;
+        for (int i = 1; i < p; i++) {
+            fac[i] = fac[i - 1] * i % P;
+        }
+        ifac[p - 1] = qpow(fac[p - 1], P - 2, P);
+        for (int i = p - 1; i >= 1; i--) {
+            ifac[i - 1] = ifac[i] * i % P;
+        }
+    }
+
+    // C(n,m) % P: only for 0 <= n,m < P
+    i64 C(int n, int m) {
+        if (n < m || m < 0) return 0;
+        return fac[n] * ifac[m] % P * ifac[n - m] % P;
+    }
+
+    // C(n,m) % P: Lucas theorem
+    i64 lucas(i64 n, i64 m) {
+        if (m == 0) return 1;
+        return C(n % P, m % P) * lucas(n / P, m / P) % P;
+    }
+};
+// Lucas comb(p); comb.lucas(n,m) => C(n,m) % p
+```
+
+### exLucas
+
+对于 $\mathrm{mod}$ 不是素数的情况（素数幂 or 一般合数），质因数分解得 $\mathrm{mod}=p_1^{\alpha_1}p_2^{\alpha_2}\cdots p_k^{\alpha_k}$，分别求出模 $p_i ^{\alpha_i}$ 意义下组合数 $C(n,m)$ 的余数，对同余方程组用 $\text{CRT}$ 合并答案。
+
+- 时间复杂度：$O(\sqrt{\mathrm{mod}}+\sum{p_i^{\alpha_i}})$
+- 如果 $\mathrm{mod}$ 可以很容易分解为**幂次为1的质数**，建议用Lucas对每个 $p_i$ 计算后CRT合并，而不是使用exLucas
+
+```cpp
+// C(n,m) % mod, mod can be composite
+class ExLucas {
+public:
+    static i64 exlucas(i64 n, i64 m, i64 mod) {
+        if (mod == 1 || n < m || m < 0) return 0;
+        vector<i64> mods, a;
+        i64 x = mod;
+        for (i64 i = 2; i * i <= x; i++) {
+            if (x % i == 0) {
+                i64 pk = 1;
+                while (x % i == 0) {
+                    x /= i;
+                    pk *= i;
+                }
+                mods.push_back(pk);
+                a.push_back(C(n, m, i, pk));
+            }
+        }
+        if (x > 1) {
+            mods.push_back(x);
+            a.push_back(C(n, m, x, x));
+        }
+        return CRT(a, mods);
+    }
+
+private:
+    static i64 fac(i64 n, i64 p, i64 pk, const vector<i64> &pre) {
+        if (n == 0) return 1;
+        i64 res = pre[pk];
+        res = qpow(res, n / pk, pk);
+        res = res * pre[n % pk] % pk;
+        return res * fac(n / p, p, pk, pre) % pk;
+    }
+    static i64 inv(i64 a, i64 m) {
+        i64 x, y;
+        exgcd(a, m, x, y);
+        return (x % m + m) % m;
+    }
+    // C(n,m) % pk, p is prime factor of pk
+    static i64 C(i64 n, i64 m, i64 p, i64 pk) {
+        if (n < m || m < 0) return 0;
+        // O(pk) 预处理前缀积
+        vector<i64> pre(pk + 1);
+        pre[0] = 1;
+        for (i64 i = 1; i <= pk; i++) {
+            if (i % p == 0) {
+                pre[i] = pre[i - 1];
+            } else {
+                pre[i] = pre[i - 1] * i % pk;
+            }
+        }
+        i64 f1 = fac(n, p, pk, pre);
+        i64 f2 = fac(m, p, pk, pre);
+        i64 f3 = fac(n - m, p, pk, pre);
+        i64 res = 0;
+        for (i64 i = n; i; i /= p) res += i / p;
+        for (i64 i = m; i; i /= p) res -= i / p;
+        for (i64 i = n - m; i; i /= p) res -= i / p;
+        return f1 * inv(f2, pk) % pk * inv(f3, pk) % pk * qpow(p, res, pk) % pk;
+    }
+};
+// Exlucas::exlucas(n, m, mod) => C(n,m) % mod
+```
 
 ## 上指标求和
 
@@ -2945,7 +3051,7 @@ int exgcd(int a,int b,int &x,int &y){
 }
 ```
 
-## 中国剩余定理 CRT
+## 中国剩余定理
 
 求解如下形式的一元线性同余方程组（其中 $n_1,n_2,\cdots,n_k$ 两两互质）
 $$
