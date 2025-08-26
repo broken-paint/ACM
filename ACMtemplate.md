@@ -2931,7 +2931,6 @@ a^{(b\text{ mod}\varphi(m))+\varphi(m)}, & \text{if } \gcd(a, m) \neq 1 \text{ a
 ```cpp
 // ax+by=gcd(a,b)
 // mod非素数，扩展欧几里得
-// ax+by = gcd(a,b)
 // 返回 d=gcd(a,b);和对应于等式ax+by=d中的x,y
 int exgcd(int a,int b,int &x,int &y){
     if(b==0){
@@ -2943,17 +2942,6 @@ int exgcd(int a,int b,int &x,int &y){
     x=y1;
     y=(x1-a/b*y1);
     return p;
-}
-// lzy
-ll exgcd(ll a, ll b, ll& x, ll& y) {
-    if (b == 0) {
-        x = 1;
-        y = 0;
-        return a;
-    }
-    ll g = exgcd(b, a % b, y, x);
-    y -= (a / b) * x;
-    return g;
 }
 ```
 
@@ -2972,110 +2960,47 @@ x \equiv a_{k} \pmod{n_{k}}
 $$
 
 ```c++
-int CRT(vector<int> &a, vector<int> &r) {
-    int n=1,ans=0;
-    for(int i=0;i<r.size();i++) n=n*r[i];
-    for(int i=0;i<a.size();i++){
-        int m=n/r[i],b,y;
-        exgcd(m,r[i],b,y);
-        ans=(ans+a[i]*m*b%n)%n;
+i64 CRT(const vector<i64> &a, const vector<i64> &m) {
+    int n = a.size();
+    i64 M = 1;
+    for (int i = 0; i < n; i++) M *= m[i];
+    i64 res = 0;
+    for (int i = 0; i < n; i++) {
+        i64 Mi = M / m[i];
+        i64 x, y;
+        // Mi * x ≡ 1 (mod m[i]) 求逆元 <=>
+        // Mi * x + m[i] * y = gcd(Mi, m[i]) = 1
+        exgcd(Mi, m[i], x, y);
+        // use i128 to avoid overflow !!!
+        // i64 tmp = (i128)a[i] * Mi % M * x % M;
+        i64 tmp = a[i] * Mi * x % M;
+        res = (res + tmp) % M;
     }
-    return (ans%n+n)%n;
-}
-// lzy: 优先使用i128，比龟速乘更快
-static inline ll mul(ll a, ll b, const ll mod) {
-    return (i128)a * b % mod;
-}
-ll CRT(vector<int>& a, vector<int>& r) {
-    ll n = 1, ans = 0;
-    for (int i = 0; i < r.size(); i++) n = n * r[i];
-    for (int i = 0; i < a.size(); i++) {
-        ll m = n / r[i], b, y;
-        exgcd(m, r[i], b, y);
-        ans = (ans + mul(mul(a[i], m, n), b, n)) % n;
-    }
-    return (ans % n + n) % n;
+    return (res + M) % M;
 }
 ```
 
 ### 扩展CRT
 
-处理模数不互质的情况
+不保证模数 $m_i$ 两两互质的情况。通解：$x \equiv x_0 \pmod M$
 
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
-#define int __int128
-int exgcd(int a,int b,int &x,int &y){
-    if(b==0){
-        x=1,y=0;
-        return a;
+// return: x (mod M) 最小非负解, -1无解
+i64 exCRT(const vector<i64> &a, const vector<i64> &m) {
+    int n = a.size();
+    i64 M = m[0], R = a[0];
+    for (int i = 1; i < n; i++) {
+        i64 x, y;
+        i64 g = exgcd(M, m[i], x, y);
+        if ((a[i] - R) % g != 0) return -1;  // 无解
+        // use i128 to avoid overflow !!!
+        i64 t = ((i128)(a[i] - R) / g * x) % (m[i] / g);
+
+        i128 tmp = (i128)t * M + R;
+        M = (i128)M / g * m[i];  // lcm(M, m[i])
+        R = (i64)((tmp % M + M) % M);
     }
-    int x1,y1;
-    int p=exgcd(b,a%b,x1,y1);
-    x=y1;
-    y=(x1-a/b*y1);
-    return p;
-}
-int ExCRT(vector<int> &a,vector<int> &r){
-    int a1=0,r1=1;
-    for(int i=0;i<a.size();i++){
-        int a2=(a[i]%r[i]+r[i])%r[i],r2=r[i];
-        int x,y;
-        int g=exgcd(r1,r2,x,y);
-        if((a2-a1)%g!=0){
-            return -1;
-        }
-        x*=(a1-a2)/g;
-        //y*=(a2-a1)/g;
-        a1=a1-r1*x;
-        //y*=(a2-a1)/g;
-        r1=r2/g*r1;
-        a1=(a1%r1+r1)%r1;
-        //cerr<<a1<<" "<<r1<<" "<<g<<"\n";
-    }
-    return (a1%r1+r1)%r1;
-}
-void get(int &x){
-    x=0;
-    char ch=getchar();
-    while(ch<'0'||ch>'9'){
-        ch=getchar();
-    }
-    while(ch>='0'&&ch<='9'){
-        x=x*10+ch-'0';
-        ch=getchar();
-    }
-}
-void print(__int128 x){
-    if(x==0){
-        putchar('0');
-        return;
-    }
-    stack<char> st;
-    while(x){
-        st.push(x%10+'0');
-        x/=10;
-    }
-    while(!st.empty()){
-        putchar(st.top());
-        st.pop();
-    }
-}
-void solve(){
-    int k;
-    get(k);
-    vector<int> a(k),b(k);
-    for(int i=0;i<k;i++){
-        get(a[i]);
-        get(b[i]);
-    }
-    print(ExCRT(b,a));
-}
-signed main(){
-    int t=1;
-    while(t--) solve();
-    return 0;
+    return (R % M + M) % M;
 }
 ```
 
