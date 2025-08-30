@@ -3889,7 +3889,7 @@ pair<int,int> Cipolla(int n,int mod){
 }
 ```
 
-### Min25筛
+## Min25筛
 
 在 $O\left(\frac{n^{3/4}}{\log n}\right)$ 时间内求出积性函数f的前缀和，且需要满足
 
@@ -4927,72 +4927,89 @@ signed main(){
 }
 ```
 
+- 建图时需要考虑**重边**（一定不是桥）；建图后 `ebcc.work()` 求解；
+
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
-#define int long long
-void solve(){
-    int n,m;
-    cin>>n>>m;
-    vector<vector<int>> v(n+1);
-    vector<int> e;
-    for(int i=1;i<=m;i++){
-        int x,y;
-        cin>>x>>y;
-        v[x].push_back(e.size());
-        e.push_back(y);
-        v[y].push_back(e.size());
-        e.push_back(x);
+struct EBCC {
+    int n, m;
+    vector<vector<pair<int, int>>> g;  // {邻居, 边索引}
+    vector<int> dfn, low;
+    vector<bool> bridge;
+    int cur;  // current time
+
+    int cnt;                   // number of ebccs
+    vector<int> comp;          // component id of node i (0-indexed)
+    vector<vector<int>> node;  // nodes in each ebcc (0-indexed)
+
+    EBCC(int _n) : n(_n), g(_n) {
+        m = 0;  // number of edges
     }
-    int cnt=0;
-    vector<int> dfn(n+1,0),low(n+1,0);
-    vector<bool> flag(e.size(),0);
-    stack<int> st;
-    vector<vector<int>> ebcc;
-    function<void(int,int)> tarjan=[&](int x,int laste){
-        low[x]=dfn[x]=++cnt;
-        st.push(x);
-        for(int &p:v[x]){
-            int to=e[p];
-            if(p==(laste^1)) continue;
-            if(!dfn[to]){
-                tarjan(to,p);
-                low[x]=min(low[x],low[to]);
-            }else{
-                low[x]=min(low[x],dfn[to]);
+
+    // 添加无向边，并赋予其唯一索引
+    void add(int u, int v) {
+        g[u].emplace_back(v, m);
+        g[v].emplace_back(u, m);
+        m++;
+    }
+
+    // Tarjan DFS，通过父边索引来识别桥
+    void dfs1(int u, int faidx) {
+        dfn[u] = low[u] = ++cur;
+        for (const auto& edge : g[u]) {
+            int v = edge.first;
+            int curidx = edge.second;
+            if (curidx == faidx) {
+                continue;
+            }
+
+            if (!dfn[v]) {
+                dfs1(v, curidx);
+                low[u] = std::min(low[u], low[v]);
+                if (low[v] > dfn[u]) {
+                    bridge[curidx] = true;
+                }
+            } else {
+                low[u] = std::min(low[u], dfn[v]);
             }
         }
-        if(dfn[x]==low[x]){
-            ebcc.push_back({});
-            while(!st.empty()&&st.top()!=x){
-                ebcc.back().push_back(st.top());
-                st.pop();
+    }
+
+    // 常规DFS，不经过桥，划分E-BCC
+    void dfs2(int u, int id) {
+        comp[u] = id;
+        node[id].push_back(u);  // 0-indexed
+
+        for (const auto& edge : g[u]) {
+            int v = edge.first;
+            int curidx = edge.second;
+            if (bridge[curidx] || comp[v] != -1) {
+                continue;
             }
-            ebcc.back().push_back(x);
-            st.pop();
-        }
-    };
-    for(int i=1;i<=n;i++){
-        if(!dfn[i]){
-            tarjan(i,2*m);
+            dfs2(v, id);
         }
     }
-    cout<<ebcc.size()<<"\n";
-    for(auto &p:ebcc){
-        cout<<p.size()<<" ";
-        for(auto &q:p){
-            cout<<q<<" ";
+
+    void work() {
+        dfn.assign(n, 0);
+        low.assign(n, 0);
+        bridge.assign(m, false);
+        cur = cnt = 0;
+        comp.assign(n, -1);
+        node.clear();
+
+        for (int i = 0; i < n; i++) {
+            if (!dfn[i]) dfs1(i, -1);
         }
-        cout<<"\n";
+
+        for (int i = 0; i < n; i++) {
+            if (comp[i] == -1) {
+                node.emplace_back();
+                dfs2(i, cnt);
+                cnt++;
+            }
+        }
     }
-}
-signed main(){
-    cin.tie(nullptr)->sync_with_stdio(0);
-    int t=1;
-    //cin>>t;
-    while(t--) solve();
-    return 0;
-}
+};
 ```
 
 ### 点双联通分量
@@ -5082,6 +5099,84 @@ signed main(){
     return 0;
 }
 ```
+
+- 外部建图无需考虑重边和自环，传入 `VBCC` 后得到V-BCC（根据题目要求处理孤立点）
+
+```cpp
+struct VBCC {
+    int n;
+    const vector<vector<int>>& g;
+    vector<int> dfn, low;
+    stack<int> stk;
+    int cur;  // current time
+
+    int cnt;                   // number of vbccs
+    vector<vector<int>> node;  // nodes in each vbcc
+    vector<bool> cut;          // 割点
+
+    VBCC(const vector<vector<int>>& _g) : n(_g.size()), g(_g) {
+        dfn.assign(n, 0);
+        low.assign(n, 0);
+        cut.assign(n, false);
+        while (!stk.empty()) stk.pop();
+        node.clear();
+        cur = cnt = 0;
+
+        for (int i = 0; i < n; ++i) {
+            if (!dfn[i]) dfs(i, -1);
+        }
+
+        // 如果题目要求孤立点也算一个V-BCC
+        vector<bool> vis(n, false);
+        for (const auto& c : node) {
+            for (int x : c) {
+                vis[x] = true;
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            if (!vis[i]) {
+                cnt++;
+                node.push_back({i});
+            }
+        }
+    }
+
+    void dfs(int u, int fa) {
+        dfn[u] = low[u] = ++cur;
+        stk.push(u);
+        int child = 0;  // number of children in DFS tree
+        if (g[u].empty() && fa == -1) return;
+        for (int v : g[u]) {
+            if (v == fa) continue;
+            if (!dfn[v]) {
+                child++;
+                dfs(v, u);
+                low[u] = min(low[u], low[v]);
+                if (low[v] >= dfn[u]) {
+                    if (fa != -1) cut[u] = true;
+                    cnt++;
+                    node.emplace_back();
+                    while (true) {
+                        int t = stk.top();
+                        stk.pop();
+                        node.back().push_back(t);
+                        if (t == v) break;
+                    }
+                    node.back().push_back(u);  // 割点
+                }
+            } else {
+                low[u] = min(low[u], dfn[v]);
+            }
+        }
+        if (fa == -1 && child > 1) {
+            cut[u] = true;
+        }
+    }
+};
+```
+
+
 
 ## 最短路
 
