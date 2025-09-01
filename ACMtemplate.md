@@ -3904,7 +3904,7 @@ fpi：新函数（完全积性函数），质数处与f取值相同
 1. 先求出$g[n][i]$，即$x\in[2,n]  $且（x为质数或x的最小质因数>$prime_i$)时，所有fpi(x)的和
 2. $s[n][i]$表示，$x\in[2,n]$且最小质因数>$prime_i$时，所有f(x)的和
 
-$g(n, j) = g(n, j-1) - p_j^k \left( g\left(\frac{n}{p_j}, j-1\right) - g(p_{j-1}, j-1) \right)$
+$g(n, j) = g(n, j-1) - fpi(p_j) \left( g\left(\frac{n}{p_j}, j-1\right) - g(p_{j-1}, j-1) \right)$
 
 $S(n, x) = g(n) - sp_x + \sum_{\substack{p_k^e \leq n \\ k > x}} f(p_k^e) \left( S\left(\frac{n}{p_k^e}, k\right) + [e \neq 1] \right)$
 
