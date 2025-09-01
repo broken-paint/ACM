@@ -3918,6 +3918,7 @@ pair<int,int> Cipolla(int n,int mod){
 - 求解 $S(n)=\sum_{i=1}^n{f(i)}$，其中 $f$ 是数论函数，且满足：能找到另一个数论函数 $g$，使得 $f*g$ 的前缀和，以及 $g$ 本身的前缀和，能够快速计算（通常是 $O(1)$ 或 $O(\sqrt{n})$）
 - 最优时间复杂度：$O(N^{2/3})$，预处理前 $M$ 个点的前缀和（`maxn`），总复杂度 $O(M+N/\sqrt{M})$，当 $M=N^{2/3}$ 时达到最优。
 
+关键在于，构造出一个能快速计算的 $g(n)$ 与 $(f*g)(n)$ ，用 $g(1)S(n)=\Sigma^n_{i=1}(f*g)(i)-\Sigma^n_{y=2}g(y)S(\lfloor \frac ny\rfloor)$ 递归计算
 ```cpp
 #define int long long
 
