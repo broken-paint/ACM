@@ -2300,9 +2300,9 @@ signed main(){
 
 ## 卡特兰数
 
-有一个大小为n*n的方格图，左下角为(0,0)，右上角为(n,n)，从左下角开始每次只能向右或者向上走一个单位，不能走到y=x上方（但可以触碰），有几种可能的路径
+有一个大小为 $n×n$ 的方格图，左下角为 $(0,0)$ ，右上角为 $(n,n)$ ，从左下角开始每次只能向右或者向上走一个单位，不能走到 $y=x$ 上方（但可以触碰），有几种可能的路径
 
-1 1 2 5 14 42
+前几项：$1\ 1\ 2\ 5\ 14\ 42$
 
 递推式：
 $$
@@ -2323,6 +2323,19 @@ $$
 $$
 H_n=\binom{2n}{n}-\binom{2n}{n-1}
 $$
+
+推论：
+
+求 $C(a,b,k)$ ，使得任意前缀的 $cnt_a+k>cnt_b$
+
+即从 $(0,0)$ 走到 $(a,b)$ ，不能走到 $y=x+k-1$ 上方
+$$
+C(a,b,k)=\begin{cases}
+0,&a+k<b\\
+\binom{a+b}{a}-\binom{a+b}{a+k},&else
+\end{cases}
+$$
+
 
 ## MillerRabin
 
@@ -2759,6 +2772,16 @@ $$
 $$
 {n+1\choose k+1}=\Sigma_{i=1}^{n+1}{i-1\choose k}=\Sigma_{i=0}^n{i\choose k}
 $$
+
+## 双阶乘
+
+写作 $n!!$ ，表示不超过这个正整数且与它有相同的奇偶性所有正整数乘积
+
+某些情况下可以与单阶乘互相转化：
+
+$(2n)!!=2\times 4\times 6\times \dots \times 2n=2^nn!$
+
+$(2n-1)!!=1\times 3\times 5\times \dots \times (2n-1)=\frac{(2n)!}{(2n)!!}=\frac{(2n)!}{2^nn!}$
 
 ## 二项式反演
 
@@ -3889,7 +3912,108 @@ pair<int,int> Cipolla(int n,int mod){
 }
 ```
 
-### Min25筛
+## 杜教筛
+
+- 亚线性时间复杂度内计算**数论函数的前缀和**：通过狄利克雷卷积和整除分块，将一个复杂的前缀和问题转化为递归求解的形式。
+- 求解 $S(n)=\sum_{i=1}^n{f(i)}$，其中 $f$ 是数论函数，且满足：能找到另一个数论函数 $g$，使得 $f*g$ 的前缀和，以及 $g$ 本身的前缀和，能够快速计算（通常是 $O(1)$ 或 $O(\sqrt{n})$）
+- 最优时间复杂度：$O(N^{2/3})$，预处理前 $M$ 个点的前缀和（`maxn`），总复杂度 $O(M+N/\sqrt{M})$，当 $M=N^{2/3}$ 时达到最优。
+
+关键在于，构造出一个能快速计算的 $g(n)$ 与 $(f*g)(n)$ ，用 $g(1)S(n)=\Sigma^n_{i=1}(f*g)(i)-\Sigma^n_{y=2}g(y)S(\lfloor \frac ny\rfloor)$ 递归计算
+```cpp
+#define int long long
+
+struct Sieve {
+    int n;
+    vector<int> prime;
+    vector<int> spf;      // smallest prime factor
+    vector<int> mu;       // mobius
+    vector<int> phi;      // euler
+    vector<int> mu_pre;   // prefix sum of mobius
+    vector<int> phi_pre;  // prefix sum of euler
+
+    Sieve(int _n) : n(_n) {
+        prime.reserve(n / (log(n) - 1.1));
+        spf.resize(n + 1, 0);
+        mu.resize(n + 1, 0);
+        phi.resize(n + 1, 0);
+        mu_pre.resize(n + 1, 0);
+        phi_pre.resize(n + 1, 0);
+        mu[1] = 1;
+        phi[1] = 1;
+
+        for (int i = 2; i <= n; i++) {
+            if (spf[i] == 0) {
+                prime.push_back(i);
+                spf[i] = i;
+                phi[i] = i - 1;
+                mu[i] = -1;
+            }
+
+            for (int p : prime) {
+                if (i * p > n) break;
+                spf[i * p] = p;
+                if (i % p == 0) {
+                    mu[i * p] = 0;
+                    phi[i * p] = phi[i] * p;
+                    break;
+                } else {
+                    mu[i * p] = -mu[i];
+                    phi[i * p] = phi[i] * (p - 1);
+                }
+            }
+        }
+
+        for (int i = 1; i <= n; i++) {
+            mu_pre[i] = mu_pre[i - 1] + mu[i];
+            phi_pre[i] = phi_pre[i - 1] + phi[i];
+        }
+    }
+
+    int get_phi_pre(int n) const { return phi_pre[n]; }
+    int get_mu_pre(int n) const { return mu_pre[n]; }
+};
+
+class DjSieve {
+    const Sieve &base;
+    unordered_map<int, int> sphi;  // prefix sum of euler
+    unordered_map<int, int> smu;   // prefix sum of mobius
+
+public:
+    explicit DjSieve(const Sieve &sieve) : base(sieve) {}
+
+    int get_phi_sum(int n) {
+        if (n <= base.n) return base.get_phi_pre(n);
+        auto it = sphi.find(n);
+        if (it != sphi.end()) return it->second;
+
+        int res = n * (n + 1) / 2;
+        for (int l = 2, r; l <= n; l = r + 1) {
+            r = n / (n / l);
+            res -= (r - l + 1) * get_phi_sum(n / l);
+        }
+        return sphi[n] = res;
+    }
+
+    int get_mu_sum(int n) {
+        if (n <= base.n) return base.get_mu_pre(n);
+        auto it = smu.find(n);
+        if (it != smu.end()) return it->second;
+
+        int res = 1;
+        for (int l = 2, r; l <= n; l = r + 1) {
+            r = n / (n / l);
+            res -= (r - l + 1) * get_mu_sum(n / l);
+        }
+        return smu[n] = res;
+    }
+};
+
+constexpr int maxn = 1e6 + 5;  // n^(2/3)
+Sieve sieve(maxn);
+DjSieve dj(sieve);
+```
+
+## Min25筛
 
 在 $O\left(\frac{n^{3/4}}{\log n}\right)$ 时间内求出积性函数f的前缀和，且需要满足
 
@@ -4927,72 +5051,89 @@ signed main(){
 }
 ```
 
+- 建图时需要考虑**重边**（一定不是桥）；建图后 `ebcc.work()` 求解；
+
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
-#define int long long
-void solve(){
-    int n,m;
-    cin>>n>>m;
-    vector<vector<int>> v(n+1);
-    vector<int> e;
-    for(int i=1;i<=m;i++){
-        int x,y;
-        cin>>x>>y;
-        v[x].push_back(e.size());
-        e.push_back(y);
-        v[y].push_back(e.size());
-        e.push_back(x);
+struct EBCC {
+    int n, m;
+    vector<vector<pair<int, int>>> g;  // {邻居, 边索引}
+    vector<int> dfn, low;
+    vector<bool> bridge;
+    int cur;  // current time
+
+    int cnt;                   // number of ebccs
+    vector<int> comp;          // component id of node i (0-indexed)
+    vector<vector<int>> node;  // nodes in each ebcc (0-indexed)
+
+    EBCC(int _n) : n(_n), g(_n) {
+        m = 0;  // number of edges
     }
-    int cnt=0;
-    vector<int> dfn(n+1,0),low(n+1,0);
-    vector<bool> flag(e.size(),0);
-    stack<int> st;
-    vector<vector<int>> ebcc;
-    function<void(int,int)> tarjan=[&](int x,int laste){
-        low[x]=dfn[x]=++cnt;
-        st.push(x);
-        for(int &p:v[x]){
-            int to=e[p];
-            if(p==(laste^1)) continue;
-            if(!dfn[to]){
-                tarjan(to,p);
-                low[x]=min(low[x],low[to]);
-            }else{
-                low[x]=min(low[x],dfn[to]);
+
+    // 添加无向边，并赋予其唯一索引
+    void add(int u, int v) {
+        g[u].emplace_back(v, m);
+        g[v].emplace_back(u, m);
+        m++;
+    }
+
+    // Tarjan DFS，通过父边索引来识别桥
+    void dfs1(int u, int faidx) {
+        dfn[u] = low[u] = ++cur;
+        for (const auto& edge : g[u]) {
+            int v = edge.first;
+            int curidx = edge.second;
+            if (curidx == faidx) {
+                continue;
+            }
+
+            if (!dfn[v]) {
+                dfs1(v, curidx);
+                low[u] = std::min(low[u], low[v]);
+                if (low[v] > dfn[u]) {
+                    bridge[curidx] = true;
+                }
+            } else {
+                low[u] = std::min(low[u], dfn[v]);
             }
         }
-        if(dfn[x]==low[x]){
-            ebcc.push_back({});
-            while(!st.empty()&&st.top()!=x){
-                ebcc.back().push_back(st.top());
-                st.pop();
+    }
+
+    // 常规DFS，不经过桥，划分E-BCC
+    void dfs2(int u, int id) {
+        comp[u] = id;
+        node[id].push_back(u);  // 0-indexed
+
+        for (const auto& edge : g[u]) {
+            int v = edge.first;
+            int curidx = edge.second;
+            if (bridge[curidx] || comp[v] != -1) {
+                continue;
             }
-            ebcc.back().push_back(x);
-            st.pop();
-        }
-    };
-    for(int i=1;i<=n;i++){
-        if(!dfn[i]){
-            tarjan(i,2*m);
+            dfs2(v, id);
         }
     }
-    cout<<ebcc.size()<<"\n";
-    for(auto &p:ebcc){
-        cout<<p.size()<<" ";
-        for(auto &q:p){
-            cout<<q<<" ";
+
+    void work() {
+        dfn.assign(n, 0);
+        low.assign(n, 0);
+        bridge.assign(m, false);
+        cur = cnt = 0;
+        comp.assign(n, -1);
+        node.clear();
+
+        for (int i = 0; i < n; i++) {
+            if (!dfn[i]) dfs1(i, -1);
         }
-        cout<<"\n";
+
+        for (int i = 0; i < n; i++) {
+            if (comp[i] == -1) {
+                node.emplace_back();
+                dfs2(i, cnt);
+                cnt++;
+            }
+        }
     }
-}
-signed main(){
-    cin.tie(nullptr)->sync_with_stdio(0);
-    int t=1;
-    //cin>>t;
-    while(t--) solve();
-    return 0;
-}
+};
 ```
 
 ### 点双联通分量
@@ -5082,6 +5223,84 @@ signed main(){
     return 0;
 }
 ```
+
+- 外部建图无需考虑重边和自环，传入 `VBCC` 后得到V-BCC（根据题目要求处理孤立点）
+
+```cpp
+struct VBCC {
+    int n;
+    const vector<vector<int>>& g;
+    vector<int> dfn, low;
+    stack<int> stk;
+    int cur;  // current time
+
+    int cnt;                   // number of vbccs
+    vector<vector<int>> node;  // nodes in each vbcc
+    vector<bool> cut;          // 割点
+
+    VBCC(const vector<vector<int>>& _g) : n(_g.size()), g(_g) {
+        dfn.assign(n, 0);
+        low.assign(n, 0);
+        cut.assign(n, false);
+        while (!stk.empty()) stk.pop();
+        node.clear();
+        cur = cnt = 0;
+
+        for (int i = 0; i < n; ++i) {
+            if (!dfn[i]) dfs(i, -1);
+        }
+
+        // 如果题目要求孤立点也算一个V-BCC
+        vector<bool> vis(n, false);
+        for (const auto& c : node) {
+            for (int x : c) {
+                vis[x] = true;
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            if (!vis[i]) {
+                cnt++;
+                node.push_back({i});
+            }
+        }
+    }
+
+    void dfs(int u, int fa) {
+        dfn[u] = low[u] = ++cur;
+        stk.push(u);
+        int child = 0;  // number of children in DFS tree
+        if (g[u].empty() && fa == -1) return;
+        for (int v : g[u]) {
+            if (v == fa) continue;
+            if (!dfn[v]) {
+                child++;
+                dfs(v, u);
+                low[u] = min(low[u], low[v]);
+                if (low[v] >= dfn[u]) {
+                    if (fa != -1) cut[u] = true;
+                    cnt++;
+                    node.emplace_back();
+                    while (true) {
+                        int t = stk.top();
+                        stk.pop();
+                        node.back().push_back(t);
+                        if (t == v) break;
+                    }
+                    node.back().push_back(u);  // 割点
+                }
+            } else {
+                low[u] = min(low[u], dfn[v]);
+            }
+        }
+        if (fa == -1 && child > 1) {
+            cut[u] = true;
+        }
+    }
+};
+```
+
+
 
 ## 最短路
 
