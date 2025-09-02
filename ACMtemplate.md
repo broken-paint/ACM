@@ -5051,6 +5051,74 @@ signed main(){
 }
 ```
 
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+void solve(){
+    int n,m;
+    cin>>n>>m;
+    vector<vector<int>> v(n+1);
+    vector<int> e;
+    for(int i=1;i<=m;i++){
+        int x,y;
+        cin>>x>>y;
+        v[x].push_back(e.size());
+        e.push_back(y);
+        v[y].push_back(e.size());
+        e.push_back(x);
+    }
+    int cnt=0;
+    vector<int> dfn(n+1,0),low(n+1,0);
+    vector<bool> flag(e.size(),0);
+    stack<int> st;
+    vector<vector<int>> ebcc;
+    function<void(int,int)> tarjan=[&](int x,int laste){
+        low[x]=dfn[x]=++cnt;
+        st.push(x);
+        for(int &p:v[x]){
+            int to=e[p];
+            if(p==(laste^1)) continue;
+            if(!dfn[to]){
+                tarjan(to,p);
+                low[x]=min(low[x],low[to]);
+            }else{
+                low[x]=min(low[x],dfn[to]);
+            }
+        }
+        if(dfn[x]==low[x]){
+            ebcc.push_back({});
+            while(!st.empty()&&st.top()!=x){
+                ebcc.back().push_back(st.top());
+                st.pop();
+            }
+            ebcc.back().push_back(x);
+            st.pop();
+        }
+    };
+    for(int i=1;i<=n;i++){
+        if(!dfn[i]){
+            tarjan(i,2*m);
+        }
+    }
+    cout<<ebcc.size()<<"\n";
+    for(auto &p:ebcc){
+        cout<<p.size()<<" ";
+        for(auto &q:p){
+            cout<<q<<" ";
+        }
+        cout<<"\n";
+    }
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
 - 建图时需要考虑**重边**（一定不是桥）；建图后 `ebcc.work()` 求解；
 
 ```cpp
