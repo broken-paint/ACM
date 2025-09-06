@@ -2636,6 +2636,57 @@ struct EulerSieve{
 };
 ```
 
+## 线性筛约数和
+
+```cpp
+struct EulerSieve{
+    vector<int> prime;
+    vector<int> v,g,sump;
+    //sump 1+p^1+p^2+...+p^k
+    int n;
+    EulerSieve(int n):v(n+1),g(n+1),sump(n+1){
+        this->n=n;
+        g[1]=1;
+        sump[1]=1;
+        for(int i=2;i<=n;i++){
+            if(v[i]==0){
+                prime.push_back(i);
+                v[i]=i;
+                g[i]=i+1;
+                sump[i]=1+i;
+            }
+            for(int &p:prime){
+                if(i*p>n) break;
+                v[i*p]=p;
+                if(i%p==0){
+                    sump[i*p]=sump[i]*p+1;
+                    g[i*p]=g[i]/sump[i]*sump[i*p];
+                    break;
+                }
+                sump[i*p]=p+1;
+                g[i*p]=g[i]*g[p];
+            }
+        }
+    }
+    vector<int> getdiv(int x) const{
+        vector<int> _div(1,1);
+        while(x>1){
+            int d=v[x];
+            int l=0,r=_div.size();
+            while(x%d==0){
+                for(int k=l;k<r;k++){
+                    _div.push_back(_div[k]*d);
+                }
+                x/=d;
+                l=r;
+                r=_div.size();
+            }
+        }
+        return _div;
+    }
+};
+```
+
 
 
 ## 组合数学
