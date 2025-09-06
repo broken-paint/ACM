@@ -2584,6 +2584,63 @@ $$
 
 
 
+## 线性筛约数个数
+
+g是约数个数，cnt是最小质因子的幂次
+
+```cpp
+struct EulerSieve{
+    vector<int> prime;
+    vector<int> v,mu,g,cnt;
+    int n;
+    EulerSieve(int n):v(n+1),mu(n+1),g(n+1),cnt(n+1){
+        this->n=n;
+        mu[1]=1;
+        g[1]=1;
+        cnt[1]=0;
+        for(int i=2;i<=n;i++){
+            if(v[i]==0){
+                prime.push_back(i);
+                v[i]=i;
+                mu[i]=-1;
+                g[i]=2;
+                cnt[i]=1;
+            }
+            for(int &p:prime){
+                if(i*p>n) break;
+                v[i*p]=p;
+                if(i%p==0){
+                    g[i*p]=g[i]/(cnt[i]+1)*(cnt[i]+2);
+                    cnt[i*p]=cnt[i]+1;
+                    break;
+                }
+                g[i*p]=g[i]*g[p];
+                mu[i*p]=mu[i]*mu[p];
+                cnt[i*p]=1;
+            }
+        }
+    }
+    vector<int> getdiv(int x) const{
+        vector<int> _div(1,1);
+        while(x>1){
+            int d=v[x];
+            int l=0,r=_div.size();
+            while(x%d==0){
+                for(int k=l;k<r;k++){
+                    _div.push_back(_div[k]*d);
+                }
+                x/=d;
+                l=r;
+                r=_div.size();
+            }
+        }
+        return _div;
+    }
+};
+```
+
+
+
 ## 组合数学
 
 ```cpp
@@ -4872,6 +4929,8 @@ n元一次不等式组，包含n个变量x1……xn，以及m个约束条件，�
 
 ## 强连通分量
 
+### tarjan
+
 ```cpp
 function<void(int)> tarjan=[&](int x){
         dfn[x]=low[x]=++cnt;
@@ -4904,6 +4963,80 @@ function<void(int)> tarjan=[&](int x){
         if(!dfn[i]) tarjan(i);
     }
 ```
+
+### Kosaraju 科萨拉朱
+
+两次dfs，第一次dfs原图，第二次dfs反图，第二次每次dfs到的点属于同一个强联通块
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+void solve(){
+    int n,m;
+    cin>>n>>m;
+    vector<vector<pair<int,int>>> v(n+1);
+    vector<vector<pair<int,int>>> vv(n+1);
+    vector<pair<int,int>> e(1);
+    for(int i=1;i<=m;i++){
+        int x,y;
+        cin>>x>>y;
+        e.emplace_back(x,y);
+        v[x].emplace_back(y,i);
+        vv[y].emplace_back(x,i);
+    }
+    vector<bool> vis1(n+1),vis2(n+1);
+    vector<int> s;
+    vector<bool> usee(m+1);
+    auto dfs1=[&](auto &&self,int x)->void{
+        for(auto &[to,id]:v[x]){
+            if(vis1[to]) continue;
+            usee[id]=1;
+            vis1[to]=1;
+            self(self,to);
+        }
+        s.push_back(x);
+    };
+    auto dfs2=[&](auto &&self,int x)->void{
+        for(auto &[to,id]:vv[x]){
+            if(vis2[to]) continue;
+            usee[id]=1;
+            vis2[to]=1;
+            self(self,to);
+        }
+    };
+    for(int i=1;i<=n;i++){
+        if(!vis1[i]){
+            vis1[i]=1;
+            dfs1(dfs1,i);
+        }
+    }
+    int _=0;
+    for(int i=n-1;i>=0;i--){
+        if(!vis2[s[i]]){
+            _=1;
+            vis2[s[i]]=1;
+            dfs2(dfs2,s[i]);
+        }
+    }
+    int cnt=0;
+    for(int i=1;i<=m&&cnt<m-2*n;i++){
+        if(!usee[i]){
+            cout<<e[i].first<<" "<<e[i].second<<"\n";
+            cnt++;
+        }
+    }
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    cin>>t;
+    while(t--) solve();
+    return 0;
+}
+```
+
+
 
 ## 割点与桥
 
