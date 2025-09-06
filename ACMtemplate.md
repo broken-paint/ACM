@@ -2591,18 +2591,16 @@ g是约数个数，cnt是最小质因子的幂次
 ```cpp
 struct EulerSieve{
     vector<int> prime;
-    vector<int> v,mu,g,cnt;
+    vector<int> v,g,cnt;
     int n;
-    EulerSieve(int n):v(n+1),mu(n+1),g(n+1),cnt(n+1){
+    EulerSieve(int n):v(n+1),g(n+1),cnt(n+1){
         this->n=n;
-        mu[1]=1;
         g[1]=1;
         cnt[1]=0;
         for(int i=2;i<=n;i++){
             if(v[i]==0){
                 prime.push_back(i);
                 v[i]=i;
-                mu[i]=-1;
                 g[i]=2;
                 cnt[i]=1;
             }
@@ -2615,7 +2613,6 @@ struct EulerSieve{
                     break;
                 }
                 g[i*p]=g[i]*g[p];
-                mu[i*p]=mu[i]*mu[p];
                 cnt[i*p]=1;
             }
         }
