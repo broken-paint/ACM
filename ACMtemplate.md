@@ -3260,6 +3260,114 @@ d(n)：一个数n的约数个数
 σ(n)：一个数n的约数和
 f(x)=xk(k∈N)：这个玩意儿也是积性函数
 
+## 拉格朗日插值
+
+给定 $n$ 个点值 $(x_i,y_i)$ ，确定一个最高次数为 $n-1$ 的多项式
+
+通过构造 $n$ 个 $g_i(x_j)$ 使得仅当 $i=j$ 时 $g_i(x_j)=1$ ，否则 $g_i(x_j)=0$
+
+可以构造出 $g_i(x)=\prod \limits_{i \neq j} \frac {x-x_j}{x_i-x_j}$
+
+此时要求的 $f(x)=\Sigma_{i=0}^n y_i\prod \limits_{i \neq j} \frac {x-x_j}{x_i-x_j}$
+
+可在 $O(n^2)$ 时间复杂度内求解
+
+当值连续时，可以通过维护 $g_i(x_j)$ 中分子与分母的前缀积和后缀积优化至 $O(n)$
+
+```c++
+// 值不连续 O(n^2)
+template <int MOD>
+struct Lagrange{
+    vector<pair<int, int>> v;
+    int n;
+    int qpow(int x, int y){
+        x %= MOD;
+        if (x == 0)
+            return 0;
+        int ans = 1, base = x;
+        while (y){
+            if (y & 1)
+                ans = ans * base % MOD;
+            base = base * base % MOD;
+            y >>= 1;
+        }
+        return ans;
+    }
+    Lagrange() : n(0) {}
+    void insert(int x, int y){
+        n++;
+        v.emplace_back(x, y);
+    }
+    int query(int x){
+        int ret = 0;
+        int t = 1;
+        for (int i = 0; i < n; i++){
+            if (x == v[i].first){
+                return v[i].second;
+            }
+            t = (t * (x - v[i].first) % MOD) % MOD;
+        }
+        for (int i = 0; i < n; i++){
+            int inv = 1;
+            for (int j = 0; j < n; j++){
+                if (i != j)
+                    inv = inv * ((v[i].first - v[j].first) % MOD) % MOD;
+            }
+            ret = (ret + v[i].second * t % MOD * qpow(inv * (x - v[i].first) % MOD, MOD - 2) % MOD) % MOD;
+        }
+        return (ret + MOD) % MOD;
+    }
+};
+```
+```c++
+//值连续 O(n)
+template <int MOD>
+struct Lagrange{
+    vector<pair<int, int>> v;
+    int n;
+    int qpow(int x, int y){
+        x %= MOD;
+        if (x == 0)
+            return 0;
+        int ans = 1, base = x;
+        while (y)
+        {
+            if (y & 1)
+                ans = ans * base % MOD;
+            base = base * base % MOD;
+            y >>= 1;
+        }
+        return ans;
+    }
+    Lagrange() : n(0) {}
+    void insert(int x, int y){
+        n++;
+        v.emplace_back(x, y);
+    }
+    int query(int x){
+        int ret = 0;
+        int t = 1;
+        vector<int> jc(n);
+        jc[0] = 1;
+        for (int i = 1; i < n; i++){
+            jc[i] = jc[i - 1] * i % MOD;
+        }
+        for (int i = 0; i < n; i++){
+            if(x==v[i].first){
+                return v[i].second;
+            }
+            t = (t * (x - v[i].first) % MOD) % MOD;
+        }
+        for (int i = 0; i < n; i++){
+            if ((n - 1 - i) & 1)
+                ret = (ret - v[i].second * t % MOD * qpow(jc[i] * jc[n - 1 - i] % MOD * ((x - v[i].first) % MOD) % MOD, MOD - 2) % MOD) % MOD;
+            else
+                ret = (ret + v[i].second * t % MOD * qpow(jc[i] * jc[n - 1 - i] % MOD * ((x - v[i].first) % MOD) % MOD, MOD - 2) % MOD) % MOD;
+        }
+        return (ret + MOD) % MOD;
+    }
+};
+```
 ## 多项式
 
 ### 快速傅里叶变换 FFT
