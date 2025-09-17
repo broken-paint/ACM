@@ -7087,6 +7087,9 @@ void solve() {
 ## 二维几何
 
 ```cpp
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
 struct Point{
     double x,y;
     double operator*(const Point &e) const{
@@ -7129,9 +7132,9 @@ struct Point{
         return sqrtl(x*x+y*y);
     }
     //向量方向
-    //1 a在b逆时针方向
+    //1 this在e顺时针方向
     //0 同向或反向
-    //2 a在b顺时针方向
+    //2 this在e逆时针方向
     int ordervector(const Point &e){
         double p=(*this)^e;
         if(p>0) return 1;
@@ -7207,29 +7210,24 @@ struct Polygon{
             convexhull.push_back(p.front());
             return;
         }
-        vector<int> st(2*n+5,0);
-        vector<bool> used(n,0);
-        int tp=0;
-        st[++tp]=0;
+        vector<int> st1={0},st2={n-1};
         for(int i=1;i<n;i++){
-            while(tp>=2&&((p[st[tp]]-p[st[tp-1]])^(p[i]-p[st[tp]]))<=0){
-                used[st[tp--]]=0;
+            while(st1.size()>=2&&((p[st1.back()]-p[st1[st1.size()-2]])^(p[i]-p[st1.back()]))>0){
+                st1.pop_back();
             }
-            used[i]=1;
-            st[++tp]=i;
+            st1.push_back(i);
         }
-        int tmp=tp;//下凸壳大小
         for(int i=n-2;i>=0;i--){
-            if(!used[i]){
-                while(tp>tmp&&((p[st[tp]]-p[st[tp-1]])^(p[i]-p[st[tp]]))<=0){
-                    used[st[tp--]]=0;
-                }
-                used[i]=1;
-                st[++tp]=i;
+            while(st2.size()>=2&&((p[st2.back()]-p[st2[st2.size()-2]])^(p[i]-p[st2.back()]))>0){
+                st2.pop_back();
             }
+            st2.push_back(i);
         }
-        for(int i=1;i<=tp;i++){
-            convexhull.push_back(p[st[i]]);
+        for(int i=0;i<st1.size();i++){
+            convexhull.push_back(p[st1[i]]);
+        }
+        for(int i=1;i<st2.size();i++){
+            convexhull.push_back(p[st2[i]]);
         }
     }
     double getPerimeter(){
@@ -7301,7 +7299,84 @@ struct Polygon{
         }
         return {ans,p};
     }
+    void inpre(){
+        for(int i=1;i<convexhull.size();i++){
+            convexhull[i]=convexhull[i]-convexhull[0];
+        }
+    }
+    void infin(){
+        for(int i=1;i<convexhull.size();i++){
+            convexhull[i]=convexhull[i]+convexhull[0];
+        }
+    }
+    bool in(Point x){
+        x=x-convexhull[0];
+        auto it1=upper_bound(convexhull.begin()+1,convexhull.end()-1,x,[](const auto &x,const auto &y){
+            return (x^y)<0;
+        });
+        if(it1==convexhull.end()-1||it1==convexhull.begin()+1){
+            return 0;
+        }
+        auto it0=prev(it1);
+        auto l=*it1-*it0;
+        auto result=(x-*it0).ordervector(l);
+        if(result==1||result==0){
+            return true;
+        }else{
+            return false;
+        }
+    }
 };
+Polygon Minkowski(Polygon a,Polygon b){
+    Polygon c(1);
+    c.convexhull.emplace_back(a.convexhull[0]+b.convexhull[0]);
+    for(int i=0;i+1<a.convexhull.size();i++){
+        a.convexhull[i]=a.convexhull[i+1]-a.convexhull[i];
+    }
+    for(int i=0;i+1<b.convexhull.size();i++){
+        b.convexhull[i]=b.convexhull[i+1]-b.convexhull[i];
+    }
+    a.convexhull.pop_back();
+    b.convexhull.pop_back();
+    c.convexhull.resize(a.convexhull.size()+b.convexhull.size()+1);
+    merge(a.convexhull.begin(),a.convexhull.end(),b.convexhull.begin(),b.convexhull.end(),c.convexhull.begin()+1,[](const Point &a,const Point &b){
+        return (a^b)<0;
+    });
+    for(int i=1;i<c.convexhull.size();i++){
+        c.convexhull[i]=c.convexhull[i]+c.convexhull[i-1];
+    }
+    return c;
+}
+void solve(){
+    int n,m,q;  
+    cin>>n>>m>>q;
+    Polygon poly1(n),poly2(m);
+    poly1.input();
+    poly2.input();
+    for(auto &x:poly2.p){
+        x=Point(0,0)-x;
+    }
+    poly1.getConvex();
+    poly2.getConvex();
+    Polygon poly=Minkowski(poly1,poly2);
+    poly.inpre();
+    while(q--){
+        Point p;
+        cin>>p.x>>p.y;
+        if(poly.in(p)){
+            cout<<1<<"\n";
+        }else{
+            cout<<0<<'\n';
+        }
+    }
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
+}
 ```
 
 ```cpp
