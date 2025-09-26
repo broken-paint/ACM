@@ -117,7 +117,7 @@ struct SegmentTree{
     }
     SegmentTree(int n,vector<int> &v):n(n){
         node.resize((n<<2)+5);
-        lazy.assign((n<<2+5),0);
+        lazy.assign((n<<2)+5,0);
         init(v);
     }
     void update(int id,int l,int r,int x,int y,int delta){
