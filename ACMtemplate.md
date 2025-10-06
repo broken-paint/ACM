@@ -7388,87 +7388,80 @@ const double eps = 1e-8; // 视情况调整eps
 const double inf = 1e20;
 const double pi = acos(-1.0);
 
-int sgn(double x) {
-    if (fabs(x) < eps) return 0;
-    if (x < 0) return -1;
-    else return 1;
+inline int sgn(double x) {
+    // return (x > EPS) - (x < -EPS);
+    if (fabs(x) < EPS) return 0;
+    return x < 0 ? -1 : 1;
 }
 
 struct Point {
     double x, y;
-    Point() {}
-    Point(double _x, double _y) : x(_x), y(_y) {}
+    Point(double _x = 0, double _y = 0) : x(_x), y(_y) {}
 
-    void input() { cin >> x >> y; }
-    void output() { cerr << fixed << setprecision(10) << x << " " << y << '\n'; }
+    // operators
+    Point operator+(const Point& p) const { return Point(x + p.x, y + p.y); }
+    Point operator-(const Point& p) const { return Point(x - p.x, y - p.y); }
+    Point operator*(double k) const { return Point(x * k, y * k); }
+    Point operator/(double k) const { return Point(x / k, y / k); }
+    bool operator==(const Point& p) const { return sgn(x - p.x) == 0 && sgn(y - p.y) == 0; }
+    bool operator!=(const Point& p) const { return !(*this == p); }
+    bool operator<(const Point& p) const {
+        if (sgn(x - p.x) != 0) return x < p.x;
+        return sgn(y - p.y) < 0;
+    }
 
-    bool operator==(Point b) const { return sgn(x - b.x) == 0 && sgn(y - b.y) == 0; }
-    bool operator<(Point b) const { return sgn(x-b.x)==0?sgn(y-b.y)<0:sgn(x-b.x)<0; }
-    Point operator+(const Point &b) const { return Point(x + b.x, y + b.y); }
-    Point operator-(const Point &b) const { return Point(x - b.x, y - b.y); }
-    Point operator*(const double &k) const { return Point(x * k, y * k); }
-    Point operator/(const double &k) const { return Point(x / k, y / k); }
+    // dot / cross product
+    double dot(const Point& p) const { return x * p.x + y * p.y; }
+    double cross(const Point& p) const { return x * p.y - y * p.x; }
 
-    double operator*(const Point &b) const { return x * b.x + y * b.y; }  // 点乘
-    double operator^(const Point &b) const { return x * b.y - y * b.x; }  // 叉乘
+    // squared length / length
+    double len2() const { return x * x + y * y; }
+    double len() const { return std::hypot(x, y); }
 
-    // 象限
-    int quad() const {
-        if (x > 0 && y >= 0) return 1;
-        if (x <= 0 && y > 0) return 2;
-        if (x < 0 && y <= 0) return 3;
-        if (x >= 0 && y < 0) return 4;
-        return 5;
+    // distance to point p
+    double dis2(const Point& p) const {
+        return (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);
     }
-    double len() { return hypot(x, y); }     // 到原点的距离
-    double len2() { return x * x + y * y; }  // 到原点距离平方
-    double dis(Point b) { return hypot(x - b.x, y - b.y); }  // 两点间距离(可能会被卡精度!)
-    double dis2(Point b) { return (x - b.x) * (x - b.x) + (y - b.y) * (y - b.y); }
-    // pa ^ pb
-    double cross(Point a, Point b) {
-        Point p = {x, y};
-        return (a - p) ^ (b - p);
-    }
-    // pa * pb
-    double dot(Point a, Point b) {
-        Point p = {x, y};
-        return (a - p) * (b - p);
-    }
-    // 点p看a,b所成夹角 弧度制
-    double rad(Point a, Point b) {
-        Point p = *this;
-        return fabs(atan2(fabs((a - p) ^ (b - p)), (a - p) * (b - p)));
-    }
-    // 角度制
-    double ang(Point a, Point b) {
-        return rad(a, b) / pi * 180.0;
-    }
-    // 考虑叉乘方向的夹角
-    double drad(Point a, Point b) {
-        Point p = *this;
-        double angle = p.rad(a, b);  // 计算夹角大小 [0, π]
-        // 根据叉积符号确定方向
-        if (sgn(cross(a, b)) < 0) {
-            angle = 2 * pi - angle;
-        }
-        return angle;
-    }
-    Point rotleft() { return Point(-y, x); }   // 逆时针旋转90
-    Point rotright() { return Point(y, -x); }  // 顺时针旋转90
-    // 绕着点p逆时针旋转angle弧度
-    Point rotate(Point p, double angle) {
+    double dis(const Point& p) const { return hypot(x - p.x, y - p.y); }
+
+    constexpr Point rotleft() const { return Point(-y, x); }   // 逆时针旋转90°
+    constexpr Point rotright() const { return Point(y, -x); }  // 顺时针旋转90°
+    // 绕点 p 逆时针旋转 angle (弧度)
+    Point rotate(const Point& p, double angle) const {
         Point v = (*this) - p;
         double c = cos(angle);
         double s = sin(angle);
         return Point(p.x + v.x * c - v.y * s, p.y + v.x * s + v.y * c);
     }
-    // 化为长度为r的向量
-    Point trunc(double r) {
-        double l = len();
-        if (!sgn(l))
-            return *this;
-        r /= l;
-        return Point(x * r, y * r);
+
+    // angle (radians or degrees) ∠APB
+    // return (-π, π]: 最小有向角 正逆负顺
+    double angle(const Point& a, const Point& b, bool rad = true) {
+        Point pa = a - (*this);
+        Point pb = b - (*this);
+        double ang = atan2(pa.cross(pb), pa.dot(pb));
+        return ang * (rad ? 1.0 : 180.0 / PI);
+    }
+    // return [0, 2π): p->a 到 p->b 逆时针旋转角
+    double angle_ccw(const Point& a, const Point& b, bool rad = true) {
+        double ang = (*this).angle(a, b);
+        if (ang < 0) ang += 2 * PI;
+        return ang * (rad ? 1.0 : 180.0 / PI);
+    }
+
+    // normalize to length k
+    Point norm(double k = 1.0) const {
+        double L = len();
+        if (sgn(L) == 0) return *this;  // 零向量
+        return (*this) * (k / L);
+    }
+
+    // IO
+    friend std::istream& operator>>(std::istream& is, Point& p) {
+        return is >> p.x >> p.y;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const Point& p) {
+        return os << fixed << setprecision(10) << p.x << " " << p.y;
     }
 };
 
