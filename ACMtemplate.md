@@ -5699,6 +5699,79 @@ signed main(){
 }
 ```
 
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+void solve(){
+	int n,m;
+	cin>>n>>m;
+	vector<vector<pair<int,int>>> v(n+1);
+	vector<pair<int,int>> e(m+1);
+	for(int i=1;i<=m;i++){
+		int x,y;
+		cin>>x>>y;
+		e[i]={x,y};
+		v[x].emplace_back(y,i);
+		v[y].emplace_back(x,i);
+	}
+	int cnt=0;
+    vector<int> dfn(n+1,0),low(n+1,0);
+    stack<int> st;
+    vector<vector<int>> pbcc;
+	vector<vector<int>> pbccedge;
+    function<void(int,int,int)> tarjan=[&](int x,int root,int pid){
+        low[x]=dfn[x]=++cnt;
+        if(x==root&&v[x].size()==0){
+            pbcc.push_back({});
+            pbcc.back().push_back(x);
+			pbccedge.emplace_back();
+            return;
+        }
+        for(auto &[p,id]:v[x]){
+			if(id==pid) continue;
+            if(!dfn[p]){
+				st.push(id);
+                tarjan(p,root,id);
+                low[x]=min(low[x],low[p]);
+                if(low[p]>=dfn[x]){
+					pbccedge.emplace_back();
+					while(st.top()!=id){
+						pbccedge.back().push_back(st.top());
+						st.pop();
+					}
+					pbccedge.back().push_back(id);
+					st.pop();
+					pbcc.emplace_back();
+					for(auto &t:pbccedge.back()){
+						pbcc.back().push_back(e[t].first);
+						pbcc.back().push_back(e[t].second);
+					}
+					sort(pbcc.back().begin(),pbcc.back().end());
+					pbcc.back().erase(unique(pbcc.back().begin(),pbcc.back().end()),pbcc.back().end());
+				}
+            }else if(dfn[p]<dfn[x]){
+				st.push(id);
+                low[x]=min(low[x],dfn[p]);
+            }
+        }
+    };
+	for(int i=1;i<=n;i++){
+		if(!dfn[i]){
+			tarjan(i,i,-1);
+		}
+	}
+}
+signed main(){
+	cin.tie(nullptr)->sync_with_stdio(0);
+	int t=1;
+	cin>>t;
+	while(t--) solve();
+	return 0;
+}
+```
+
+
+
 - 外部建图无需考虑重边和自环，传入 `VBCC` 后得到V-BCC（根据题目要求处理孤立点）
 
 ```cpp
