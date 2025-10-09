@@ -5775,6 +5775,101 @@ struct VBCC {
 };
 ```
 
+直接处理出每个点双的子图
+
+```cpp
+struct VBCC {
+    int n;
+    const vector<vector<int>> &g;
+    vector<int> dfn, low;
+    stack<pair<int, int>> st;
+    int cur;
+
+    int cnt;
+    vector<vector<int>> node;                // 点集
+    vector<vector<pair<int, int>>> subgraph; // 子图
+    vector<bool> cut;
+
+    VBCC(const vector<vector<int>> &_g) : n(_g.size()), g(_g) {
+        dfn.assign(n, 0);
+        low.assign(n, 0);
+        cut.assign(n, false);
+        while (!st.empty())
+            st.pop();
+        subgraph.clear();
+        node.clear();
+        cur = cnt = 0;
+
+        for (int i = 1; i < n; ++i) {
+            if (!dfn[i])
+                dfs(i, -1);
+        }
+        vector<bool> vis(n, false);
+        for (const auto &c : node) {
+            for (int x : c) {
+                vis[x] = true;
+            }
+        }
+        for (int i = 1; i < n; i++) {
+            if (!vis[i]) {
+                cnt++;
+                node.push_back({i});
+                subgraph.push_back({});
+            }
+        }
+    }
+
+    void dfs(int u, int fa) {
+        dfn[u] = low[u] = ++cur;
+        int child = 0;
+        if (g[u].empty() && fa == -1)
+            return;
+        for (int v : g[u]) {
+            if (v == fa)
+                continue;
+            if (!dfn[v]) {
+                child++;
+                st.push({u, v});
+                dfs(v, u);
+                low[u] = min(low[u], low[v]);
+                if (low[v] >= dfn[u]) {
+                    if (fa != -1)
+                        cut[u] = true;
+                    cnt++;
+                    node.emplace_back();
+                    subgraph.emplace_back();
+                    auto &comp_nodes = node.back();
+                    auto &comp_edges = subgraph.back();
+                    while (true) {
+                        auto e = st.top();
+                        st.pop();
+                        comp_edges.push_back(e);
+                        if ((e.first == u && e.second == v) || (e.first == v && e.second == u)) {
+                            break;
+                        }
+                    }
+                    set<int> points;
+                    for (auto &edge : comp_edges) {
+                        points.insert(edge.first);
+                        points.insert(edge.second);
+                    }
+                    points.insert(u);
+                    comp_nodes.assign(points.begin(), points.end());
+                }
+            } else {
+                if (dfn[v] < dfn[u]) {
+                    st.push({u, v});
+                }
+                low[u] = min(low[u], dfn[v]);
+            }
+        }
+        if (fa == -1 && child > 1) {
+            cut[u] = true;
+        }
+    }
+};
+```
+
 
 
 ## 最短路
