@@ -5079,6 +5079,124 @@ struct MinCostFlow{
 };
 ```
 
+zkw
+
+```cpp
+struct MinCostFlow {
+	const int INF = 1e18;
+	struct edge {
+		int y, f, c;
+		edge(int y, int f, int c) :y(y), f(f), c(c) {}
+	};
+	const int n;
+	vector<edge> e;
+	vector<vector<int>> g;
+	vector<int> h, dis, pre;
+	vector<int> it;
+	vector<char> vis;
+
+	MinCostFlow(int n) :n(n), g(n + 1) {}
+	//x->y，流量f，费用c
+	void add(int x, int y, int f, int c) {
+		g[x].push_back(e.size());
+		e.emplace_back(y, f, c);
+		g[y].push_back(e.size());
+		e.emplace_back(x, 0, -c);
+	}
+	void spfa(int s) {
+		h.assign(n + 1, INF);
+		deque<int> q;
+		vector<bool> vis(n + 1, 0);
+		h[s] = 0;
+		q.push_back(s);
+		vis[s] = 1;
+		while (!q.empty()) {
+			int u = q.front();
+			q.pop_front();
+			vis[u] = 0;
+			for (int id : g[u]) {
+				const auto& ed = e[id];
+				if (ed.f == 0) continue;
+				int v = ed.y;
+				int nd = h[u] + ed.c;
+				if (nd < h[v]) {
+					h[v] = nd;
+					if (!vis[v]) {
+						if (!q.empty() && nd < h[q.front()]) q.push_front(v);
+						else q.push_back(v);
+						vis[v] = 1;
+					}
+				}
+			}
+		}
+	}
+	bool dijkstra(int s, int t) {
+		dis.assign(n + 1, INF);
+		pre.assign(n + 1, -1);
+		priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+		dis[s] = 0; pq.emplace(0, s);
+		while (!pq.empty()) {
+			auto [d, u] = pq.top(); pq.pop();
+			if (d != dis[u]) continue;
+			for (int id : g[u]) {
+				const auto& ed = e[id];
+				if (ed.f == 0) continue;
+				int v = ed.y;
+				int nd = d + ed.c + h[u] - h[v];
+				if (nd < dis[v]) {
+					dis[v] = nd; pre[v] = id;
+					pq.emplace(nd, v);
+				}
+			}
+		}
+		return dis[t] != INF;
+	}
+	int dfs(int u, int t, int f) {
+		if (u == t || !f) return f;
+		vis[u] = 1;
+		int used = 0;
+		for (int& k = it[u]; k < (int)g[u].size(); ++k) {
+			int id = g[u][k], v = e[id].y;
+			if (!e[id].f || vis[v]) continue;
+			if (e[id].c + h[u] - h[v] != 0) continue;
+			int pushed = dfs(v, t, min(f, e[id].f));
+			if (pushed) {
+				e[id].f -= pushed;
+				e[id ^ 1].f += pushed;
+				used += pushed;
+				f -= pushed;
+				if (!f) break;
+			}
+		}
+		return used;
+	}
+
+	pair<int, int> work(int s, int t) {
+		spfa(s);
+		int flow = 0, cost = 0;
+		while (dijkstra(s, t)) {
+			for (int i = 0;i <= n;i++) if (dis[i] != INF) h[i] += dis[i];
+			if (it.size() != n + 1) it.assign(n + 1, 0);
+			else fill(it.begin(), it.end(), 0);
+			if (vis.size() != n + 1) vis.assign(n + 1, 0);
+			const int unit_cost = h[t] - h[s];
+			int aug;
+			do {
+				fill(vis.begin(), vis.end(), 0);
+				aug = dfs(s, t, INF);
+				if (aug) {
+					flow += aug;
+					cost += aug * unit_cost;
+				}
+			} while (aug);
+		}
+		return { flow,cost };
+	}
+};
+```
+
+
+
 ## 差分约束
 
 n元一次不等式组，包含n个变量x1……xn，以及m个约束条件，形如xi-xj<=ck，其中ck为常量。令dis0等于0，0向所有的点连一条点权为0的边，dis[i]<=dis[j]+ck，则j到i连一条长度为ck的边。如果存在负环则无解。
@@ -5122,7 +5240,7 @@ function<void(int)> tarjan=[&](int x){
 
 ### Kosaraju 科萨拉朱
 
-两次dfs，第一次dfs原图，第二次dfs反图，第二次每次dfs到的点属于同一个强联通块
+两次dfs，第一次dfs原图，第二次dfs反图，第二次每次dfs到的点属于同一个强连通块
 
 ```cpp
 #include<bits/stdc++.h>
@@ -5259,11 +5377,11 @@ flag[x]=1，表示fa[x]->x是桥
     }
 ```
 
-## 双联通分量
+## 双连通分量
 
-### 边双联通分量
+### 边双连通分量
 
-先求出桥，把割点删去，剩下的极大联通子图就是边双联通分量，不能用常规方法存图
+先求出桥，把割点删去，剩下的极大连通子图就是边双连通分量，不能用常规方法存图
 
 ```cpp
 #include<bits/stdc++.h>
@@ -5493,7 +5611,7 @@ struct EBCC {
 };
 ```
 
-### 点双联通分量
+### 点双连通分量
 
 两个点双最多有一个公共点，且一定是割点。
 
@@ -5647,6 +5765,101 @@ struct VBCC {
                     node.back().push_back(u);  // 割点
                 }
             } else {
+                low[u] = min(low[u], dfn[v]);
+            }
+        }
+        if (fa == -1 && child > 1) {
+            cut[u] = true;
+        }
+    }
+};
+```
+
+直接处理出每个点双的子图
+
+```cpp
+struct VBCC {
+    int n;
+    const vector<vector<int>> &g;
+    vector<int> dfn, low;
+    stack<pair<int, int>> st;
+    int cur;
+
+    int cnt;
+    vector<vector<int>> node;                // 点集
+    vector<vector<pair<int, int>>> subgraph; // 子图
+    vector<bool> cut;
+
+    VBCC(const vector<vector<int>> &_g) : n(_g.size()), g(_g) {
+        dfn.assign(n, 0);
+        low.assign(n, 0);
+        cut.assign(n, false);
+        while (!st.empty())
+            st.pop();
+        subgraph.clear();
+        node.clear();
+        cur = cnt = 0;
+
+        for (int i = 1; i < n; ++i) {
+            if (!dfn[i])
+                dfs(i, -1);
+        }
+        vector<bool> vis(n, false);
+        for (const auto &c : node) {
+            for (int x : c) {
+                vis[x] = true;
+            }
+        }
+        for (int i = 1; i < n; i++) {
+            if (!vis[i]) {
+                cnt++;
+                node.push_back({i});
+                subgraph.push_back({});
+            }
+        }
+    }
+
+    void dfs(int u, int fa) {
+        dfn[u] = low[u] = ++cur;
+        int child = 0;
+        if (g[u].empty() && fa == -1)
+            return;
+        for (int v : g[u]) {
+            if (v == fa)
+                continue;
+            if (!dfn[v]) {
+                child++;
+                st.push({u, v});
+                dfs(v, u);
+                low[u] = min(low[u], low[v]);
+                if (low[v] >= dfn[u]) {
+                    if (fa != -1)
+                        cut[u] = true;
+                    cnt++;
+                    node.emplace_back();
+                    subgraph.emplace_back();
+                    auto &comp_nodes = node.back();
+                    auto &comp_edges = subgraph.back();
+                    while (true) {
+                        auto e = st.top();
+                        st.pop();
+                        comp_edges.push_back(e);
+                        if ((e.first == u && e.second == v) || (e.first == v && e.second == u)) {
+                            break;
+                        }
+                    }
+                    set<int> points;
+                    for (auto &edge : comp_edges) {
+                        points.insert(edge.first);
+                        points.insert(edge.second);
+                    }
+                    points.insert(u);
+                    comp_nodes.assign(points.begin(), points.end());
+                }
+            } else {
+                if (dfn[v] < dfn[u]) {
+                    st.push({u, v});
+                }
                 low[u] = min(low[u], dfn[v]);
             }
         }
@@ -5922,7 +6135,7 @@ signed main(){
 
 n个集合，每个集合有两个元素，已知若干个<a,b>，表示a与b矛盾（a，b不属于同一个集合），需要从每个集合中选择一个元素，判断能否选n个两两不矛盾元素。
 
-a1和b2有矛盾，则建有向边a1->b1,b2->a2，tarjan缩点判断是否有一个集合中的两个元素都在同一个强联通块，如果是则不可能。
+a1和b2有矛盾，则建有向边a1->b1,b2->a2，tarjan缩点判断是否有一个集合中的两个元素都在同一个强连通块，如果是则不可能。
 
 选择的时候，优先选择dfs序大的，即scc编号小的
 
@@ -7079,6 +7292,26 @@ void solve() {
     }
 }
 ```
+
+## 竞赛图
+
+任意两个点之间有且只有一条边的有向图（有向完全图），赢的点连向输的点
+
+### 兰道定理
+
+比分序列：将每个点的出度从小到大排序的序列
+
+设s是图G的比分序列，G是竞赛图的充要条件为：
+$$
+\sum_{i=1}^k s_i \geq C_k^2, \quad \forall k \in \{1, 2, \ldots, n\}
+$$
+并且在k=n的时候取等
+
+### 竞赛图强连通分量个数
+
+$$
+\sum_{i=1}^n \left[\sum_{j=1}^i s_j = \binom{i}{2}\right]
+$$
 
 
 
