@@ -8014,6 +8014,7 @@ struct Polygon {
             return a.len2() < b.len2();
         });
     }
+
     // Andrew 求凸包（点集 -> CCW hull）
     // strict=true: 边上点不保留；false: 边上点保留
     static vector<Point> convexHull(vector<Point> pt, bool strict = true) {
@@ -8021,6 +8022,18 @@ struct Polygon {
         pt.erase(unique(pt.begin(), pt.end()), pt.end());
         int n = (int)pt.size();
         if (n <= 1) return pt;
+
+        auto collinear = [](const vector<Point>& q) {
+            if (q.size() <= 2) return true;
+            for (int i = 2; i < (int)q.size(); i++) {
+                if (sgn(cross(q[0], q[1], q[i])) != 0) return false;
+            }
+            return true;
+        };
+        if (collinear(pt)) {
+            if (strict) return {pt.front(), pt.back()};
+            return pt;
+        }
 
         vector<Point> L, U;
         // lower
