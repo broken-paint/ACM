@@ -931,9 +931,9 @@ signed main(){
 
 $O(nlogn)$次合并，查询时$O(1)$次合并查询
 
-具体做法是，每个节点，l,mid,r,存储mid往前的后缀贡献，和mid往后的前缀贡献
+具体做法是，每个节点，$l$ ,$mid$ ,$r$ ,存储 $mid$ 往前的后缀贡献，和 $mid$ 往后的前缀贡献
 
-查询区间[l,r]，则只需要在他们的lca上查找前缀后缀即可O(1)查询
+查询区间 $[l,r]$，则只需要在他们的 $lca$ 上查找前缀后缀即可 $O(1)$ 查询
 
 ```cpp
 #include<bits/stdc++.h>
@@ -8016,6 +8016,7 @@ struct Polygon {
             return a.len2() < b.len2();
         });
     }
+
     // Andrew 求凸包（点集 -> CCW hull）
     // strict=true: 边上点不保留；false: 边上点保留
     static vector<Point> convexHull(vector<Point> pt, bool strict = true) {
@@ -8023,6 +8024,18 @@ struct Polygon {
         pt.erase(unique(pt.begin(), pt.end()), pt.end());
         int n = (int)pt.size();
         if (n <= 1) return pt;
+
+        auto collinear = [](const vector<Point>& q) {
+            if (q.size() <= 2) return true;
+            for (int i = 2; i < (int)q.size(); i++) {
+                if (sgn(cross(q[0], q[1], q[i])) != 0) return false;
+            }
+            return true;
+        };
+        if (collinear(pt)) {
+            if (strict) return {pt.front(), pt.back()};
+            return pt;
+        }
 
         vector<Point> L, U;
         // lower
