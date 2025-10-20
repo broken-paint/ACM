@@ -2171,7 +2171,7 @@ struct matrix{
                 }
             }
         }
-        return ans;
+        return matrix(ans);
     };
     //高斯消元
     //无解-1，无穷解0，有唯一解1
@@ -2182,7 +2182,7 @@ struct matrix{
                 int line=i;
                 int maxn=v[i][column];
                 for(int j=i+1;j<n;j++){
-                    if(fabs(v[j][column])>maxn){
+                    if(abs(v[j][column])>maxn){
                         maxn=v[j][column];
                         line=j;
                     }
@@ -2195,9 +2195,11 @@ struct matrix{
                 for(int j=0;j<n;j++){
                     if(j==i) continue;
                     int k=v[j][column];
-                    for(int z=column;z<m;z++){
-                        v[j][z]^=k&v[i][z];
-                    }
+					if(k){
+						for(int z=column;z<m;z++){
+							v[j][z]^=v[i][z];
+						}
+					}
                 }
                 break;
             }
