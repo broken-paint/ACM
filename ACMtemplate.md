@@ -3260,6 +3260,12 @@ d(n)：一个数n的约数个数
 σ(n)：一个数n的约数和
 f(x)=xk(k∈N)：这个玩意儿也是积性函数
 
+## 数论分块
+
+$\lfloor\frac n i\rfloor$块的右端点在$\lfloor\frac{n}{\lfloor\frac ni\rfloor}\rfloor$，左端点在$\lfloor\frac{n}{\lfloor\frac n{i-1}\rfloor}\rfloor+1$
+
+$\lceil\frac ni\rceil$块的右端点在$\lfloor\frac{n-1}{\lfloor\frac{n-1}i\rfloor}\rfloor$，左端点在$\lfloor\frac{n-1}{\lfloor\frac{n-1}{i-1}\rfloor}\rfloor+1$
+
 ## 拉格朗日插值
 
 给定 $n$ 个点值 $(x_i,y_i)$ ，确定一个最高次数为 $n-1$ 的多项式 $f(x)$ ，查询其某个单点值
