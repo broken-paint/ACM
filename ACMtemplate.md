@@ -1103,6 +1103,200 @@ signed main(){
 }
 ```
 
+## LCT
+
+```cpp
+struct LCT{
+    struct Node{
+        int fa = 0, lson = 0, rson = 0; // 父、左、右
+        int val = 0;                    // 节点权值
+        int path_sum = 0;               // 路径汇总（异或）
+        bool rev_flag = false;          // 反转标记
+        // 若要维护其他信息，可在此添加成员变量，如：int max_val, min_val, size, add_lazy;
+    };
+    vector<Node> tree;
+    LCT(int n = 0) : tree(n + 1) {}
+    // 判断节点x是否不是其所在Splay的根
+    bool not_root(int x){
+        int f = tree[x].fa;
+        return f && (tree[f].lson == x || tree[f].rson == x);
+    }
+    // ========== 信息维护核心：更新节点信息 ==========
+    void push_up(int x){
+        int l = tree[x].lson, r = tree[x].rson;
+        int lv = l ? tree[l].path_sum : 0;
+        int rv = r ? tree[r].path_sum : 0;
+        tree[x].path_sum = lv ^ rv ^ tree[x].val;
+        /* 其他常见信息维护示例：
+        // 维护路径和：
+        tree[x].path_sum = tree[tree[x].lson].path_sum + tree[tree[x].rson].path_sum + tree[x].val;
+
+        // 维护路径最大值（需初始化max_val为负无穷，注意处理叶子节点）：
+        tree[x].max_val = max({tree[tree[x].lson].max_val, tree[tree[x].rson].max_val, tree[x].val});
+
+        // 维护路径最小值（需初始化min_val为正无穷）：
+        tree[x].min_val = min({tree[tree[x].lson].min_val, tree[tree[x].rson].min_val, tree[x].val});
+
+        // 维护子树大小（节点数）：
+        tree[x].size = tree[tree[x].lson].size + tree[tree[x].rson].size + 1;
+
+        // 同时维护多种信息（例如求和与求最大值）：
+        tree[x].path_sum = tree[tree[x].lson].path_sum + tree[tree[x].rson].path_sum + tree[x].val;
+        tree[x].max_val = max({tree[tree[x].lson].max_val, tree[tree[x].rson].max_val, tree[x].val});
+        */
+    }
+    // 翻转节点x的左右子树
+    void push_rev(int x){
+        if (!x)
+            return;
+        swap(tree[x].lson, tree[x].rson);
+        tree[x].rev_flag = !tree[x].rev_flag;
+    }
+    // 下传标记：此处主要处理翻转标记
+    void push_down(int x){
+        if (!x)
+            return;
+        if (tree[x].rev_flag){
+            if (tree[x].lson)
+                push_rev(tree[x].lson);
+            if (tree[x].rson)
+                push_rev(tree[x].rson);
+            tree[x].rev_flag = false;
+        }
+        // 示例：处理区间加懒标记 (若存在名为add_lazy的懒标记)
+        // if (tree[x].add_lazy != 0) {
+        //     if (tree[x].lson) { /* 更新tree[tree[x].lson].val和tree[tree[x].lson].add_lazy */ }
+        //     if (tree[x].rson) { /* 更新tree[tree[x].rson].val和tree[tree[x].rson].add_lazy */ }
+        //     tree[x].add_lazy = 0;
+        // }
+    }
+    // 旋转操作（Splay基础）
+    void rotate(int x){
+        int y = tree[x].fa, z = tree[y].fa;
+        bool is_x_right = (tree[y].rson == x);
+        if (not_root(y)){
+            if (tree[z].lson == y)
+                tree[z].lson = x;
+            else
+                tree[z].rson = x;
+        }
+        tree[x].fa = z;
+        if (is_x_right){
+            tree[y].rson = tree[x].lson;
+            if (tree[x].lson)
+                tree[tree[x].lson].fa = y;
+            tree[x].lson = y;
+            tree[y].fa = x;
+        }
+        else{
+            // x 是 y 的左儿子
+            tree[y].lson = tree[x].rson;
+            if (tree[x].rson)
+                tree[tree[x].rson].fa = y;
+            tree[x].rson = y;
+            tree[y].fa = x;
+        }
+        push_up(y);
+        push_up(x);
+    }
+    // Splay操作：将x旋转到当前Splay的根
+    void splay(int x){
+        if (!x)
+            return;
+        vector<int> stk;
+        int y = x;
+        stk.push_back(y);
+        while (not_root(y)){
+            y = tree[y].fa;
+            stk.push_back(y);
+        }
+        for (int i = (int)stk.size() - 1; i >= 0; --i)
+            push_down(stk[i]);
+
+        while (not_root(x)){
+            int y = tree[x].fa, z = tree[y].fa;
+            if (not_root(y)){
+                if ((tree[y].lson == x) ^ (tree[z].lson == y))
+                    rotate(x);
+                else
+                    rotate(y);
+            }
+            rotate(x);
+        }
+    }
+    // access：将从根到 x 的实链打通，使 x 在其代表树中位于最右（深度最大）
+    void access(int x){
+        int v = 0;
+        for (int u = x; u; u = tree[u].fa){
+            splay(u);
+            tree[u].rson = v;
+            push_up(u);
+            v = u;
+        }
+    }
+    // 将 x 设为原树的根
+    void make_root(int x){
+        access(x);
+        splay(x);
+        push_rev(x);
+    }
+    // 找到所在原树的根（用于判断连通性）
+    int find_root(int x){
+        access(x);
+        splay(x);
+        while (tree[x].lson){
+            push_down(x);
+            x = tree[x].lson;
+        }
+        splay(x);
+        return x;
+    }
+    // 分离并提取 x -> y 的路径，执行后 y 是这条路径对应 Splay 的根
+    void split(int x, int y){
+        make_root(x);
+        access(y);
+        splay(y);
+    }
+    // 连接 x 和 y（在原树中加边）
+    bool link(int x, int y){
+        make_root(x);
+        if (find_root(y) != x){
+            tree[x].fa = y;
+            return true;
+        }
+        return false;
+    }
+    // 断开 x 和 y 之间的边（在原树中删边）
+    bool cut(int x, int y){
+        make_root(x);
+        if (find_root(y) == x && tree[y].fa == x && tree[y].lson == 0){
+            tree[y].fa = 0;
+            tree[x].rson = 0;
+            push_up(x);
+            return true;
+        }
+        return false;
+    }
+    // 修改节点 x 的权值
+    void update_node(int x, int new_val){
+        splay(x);
+        tree[x].val = new_val;
+        push_up(x);
+    }
+    // 查询 x 到 y 路径上的信息（此处为异或和）
+    int query_path(int x, int y){
+        split(x, y);
+        return tree[y].path_sum;
+    }
+    // 判断 x 和 y 是否连通
+    bool is_connected(int x, int y){
+        return find_root(x) == find_root(y);
+    }
+};
+```
+
+
+
 # 字符串
 
 ## 序列自动机
