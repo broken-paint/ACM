@@ -455,6 +455,105 @@ struct PresidentTree{
 };
 ```
 
+## 主席树
+
+```cpp
+// 要注意当k>区间元素个数的时候kth会返回值域上界/下界
+struct PresidentTree{
+    vector<int> node;
+    vector<int> lson, rson;
+    vector<int> head;
+    int L, R;
+    void pushup(int id, int l, int r){
+        node[id] = 0;
+        if (lson[id])
+            node[id] += node[lson[id]];
+        if (rson[id])
+            node[id] += node[rson[id]];
+    }
+    PresidentTree(int l, int r) : L(l), R(r){
+        node.resize(2);
+        lson.resize(2);
+        rson.resize(2);
+        head.resize(1);
+        node[1] = 0;
+        head[0] = 1;
+    }
+    // 在baseid版本上更新，x这个位置+=y
+    void update(int baseid, int x, int y){
+        auto updatenode = [&](auto &&self, int base, int l, int r, int x, int y){
+            int now = node.size();
+            node.emplace_back();
+            lson.emplace_back();
+            rson.emplace_back();
+            if (l == r){
+                if (!base)
+                    node[now] = y;
+                else
+                    node[now] = node[base] + y;
+                return now;
+            }
+            int mid = l + (r - l >> 1);
+            if (x <= mid){
+                lson[now] = self(self, lson[base], l, mid, x, y);
+                rson[now] = rson[base];
+            }
+            else{
+                lson[now] = lson[base];
+                rson[now] = self(self, rson[base], mid + 1, r, x, y);
+            }
+            pushup(now, l, r);
+            return now;
+        };
+        head.push_back(updatenode(updatenode, head[baseid], L, R, x, y));
+    }
+    // 加一个版本
+    void push_back(int x, int y){
+        update((int)head.size() - 1, x, y);
+    }
+    // 询问id版本值域[x,y]的权值
+    int query(int id, int x, int y){
+        auto querynode = [&](auto &&self, int base, int l, int r, int x, int y){
+            if (x <= l && r <= y)
+                return node[base];
+            int mid = l + (r - l >> 1);
+            int ans = 0;
+            if (x <= mid && lson[base]){
+                ans += self(self, lson[base], l, mid, x, y);
+            }
+            if (y > mid && rson[base]){
+                ans += self(self, rson[base], mid + 1, r, x, y);
+            }
+            return ans;
+        };
+        return querynode(querynode, head[id], L, R, x, y);
+    }
+    // 查询x~y版本中新增的第k小元素
+    // 即对于线段[x,y]求第k小元素
+    int kthmin(int x, int y, int k){
+        auto query = [&](auto &&self, int l, int r, int x, int y, int k){
+            if (l == r)
+                return l;
+            int mid = l + (r - l >> 1);
+            int ans = node[lson[y]] - node[lson[x]];
+            if (ans >= k){
+                return self(self, l, mid, lson[x], lson[y], k);
+            }
+            else{
+                return self(self, mid + 1, r, rson[x], rson[y], k - ans);
+            }
+        };
+        return query(query, L, R, x, y, k);
+    }
+    // 查询x~y版本中新增的第k大元素
+    // 即对于线段[x,y]求第k大元素
+    int kthmax(int x, int y, int k){
+        int total = node[y] - node[x];
+        return kthmin(x, y, total - k + 1); // 第k大 = 第(total-k+1)小
+    }
+};
+```
+
 ## 可持久化01trietree
 
 ```cpp
@@ -931,9 +1030,9 @@ signed main(){
 
 $O(nlogn)$次合并，查询时$O(1)$次合并查询
 
-具体做法是，每个节点，l,mid,r,存储mid往前的后缀贡献，和mid往后的前缀贡献
+具体做法是，每个节点，$l$ ,$mid$ ,$r$ ,存储 $mid$ 往前的后缀贡献，和 $mid$ 往后的前缀贡献
 
-查询区间[l,r]，则只需要在他们的lca上查找前缀后缀即可O(1)查询
+查询区间 $[l,r]$，则只需要在他们的 $lca$ 上查找前缀后缀即可 $O(1)$ 查询
 
 ```cpp
 #include<bits/stdc++.h>
@@ -2171,7 +2270,7 @@ struct matrix{
                 }
             }
         }
-        return ans;
+        return matrix(ans);
     };
     //高斯消元
     //无解-1，无穷解0，有唯一解1
@@ -2182,7 +2281,7 @@ struct matrix{
                 int line=i;
                 int maxn=v[i][column];
                 for(int j=i+1;j<n;j++){
-                    if(fabs(v[j][column])>maxn){
+                    if(abs(v[j][column])>maxn){
                         maxn=v[j][column];
                         line=j;
                     }
@@ -2195,9 +2294,11 @@ struct matrix{
                 for(int j=0;j<n;j++){
                     if(j==i) continue;
                     int k=v[j][column];
-                    for(int z=column;z<m;z++){
-                        v[j][z]^=k&v[i][z];
-                    }
+					if(k){
+						for(int z=column;z<m;z++){
+							v[j][z]^=v[i][z];
+						}
+					}
                 }
                 break;
             }
@@ -8020,6 +8121,7 @@ struct Polygon {
             return a.len2() < b.len2();
         });
     }
+
     // Andrew 求凸包（点集 -> CCW hull）
     // strict=true: 边上点不保留；false: 边上点保留
     static vector<Point> convexHull(vector<Point> pt, bool strict = true) {
@@ -8027,6 +8129,18 @@ struct Polygon {
         pt.erase(unique(pt.begin(), pt.end()), pt.end());
         int n = (int)pt.size();
         if (n <= 1) return pt;
+
+        auto collinear = [](const vector<Point>& q) {
+            if (q.size() <= 2) return true;
+            for (int i = 2; i < (int)q.size(); i++) {
+                if (sgn(cross(q[0], q[1], q[i])) != 0) return false;
+            }
+            return true;
+        };
+        if (collinear(pt)) {
+            if (strict) return {pt.front(), pt.back()};
+            return pt;
+        }
 
         vector<Point> L, U;
         // lower
