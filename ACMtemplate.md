@@ -4204,58 +4204,46 @@ struct Lagrange{
 
 ### 快速傅里叶变换 FFT
 
-- 实数（`double`）系数的**线性卷积**/多项式乘法：`Poly C = A * B;`，默认得到**浮点数系数**的多项式；
-- **整数系数**：用 `llround()`（返回整型），对负数也正确四舍五入，避免 `(int)(x+0.5)` 的坑；
-- 默认使用 `std::complex` 作为复数类型；
+用法：直接当vector用，但要注意默认输入输出都是double，若要得到整数需要调用llround()
 
 ```c++
 template <class T, template <class G> class Complex>
-class Polynomial : public std::vector<T> {
+class Polynomial : public vector<T>{
     using Comp = Complex<T>;
-    // C++17及以上，可以用inline static，省掉类外初始化
-    inline static std::vector<Comp> w[2] = {};  // 单位根表 0: 正向FFT, 1: 逆向FFT
-    inline static std::vector<int> r = {};      // 比特倒序排列数组
-
-    // 初始化单位根表和比特倒序排列数组
-    static void init(int _log) {
-        if (r.size() == (1U << _log)) {
+    inline static vector<Comp> w[2];
+    inline static vector<int> r;
+    static void init(int _log){
+        if (r.size() == (1U << _log)){
             return;
         }
-
         int n = 1 << _log;
         r.assign(n, 0);
-        // 比特倒序排列
-        for (int i = 1; i < n; i++) {
+        for (int i = 1; i < n; i++){
             r[i] = (r[i >> 1] >> 1) | ((i & 1) << (_log - 1));
         }
-
         w[0].assign(n, Comp());
         w[1].assign(n, Comp());
-
-        // 单位根预处理
         const T PI = acosl(-1);
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++){
             auto th = PI * i / n;
-            auto cth = std::cos(1.L * th);
-            auto sth = std::sin(1.L * th);
+            auto cth = cos(1.L * th);
+            auto sth = sin(1.L * th);
             w[0][i] = Comp(cth, sth);
             w[1][i] = Comp(cth, -sth);
         }
     }
-
-    // op=0: 正向FFT, op=1: 逆向FFT
-    static void fft(std::vector<Comp> &a, int op) {
+    static void fft(vector<Comp> &a, int op){
         int n = a.size();
-        init(std::__lg(n));
-        for (int i = 0; i < n; i++) {
-            if (i < r[i]) {
-                std::swap(a[i], a[r[i]]);
+        init(__lg(n));
+        for (int i = 0; i < n; i++){
+            if (i < r[i]){
+                swap(a[i], a[r[i]]);
             }
         }
-        for (int mid = 1; mid < n; mid <<= 1) {
+        for (int mid = 1; mid < n; mid <<= 1){
             const int d = n / mid;
-            for (int R = mid << 1, j = 0; j < n; j += R) {
-                for (int k = 0; k < mid; k++) {
+            for (int R = mid << 1, j = 0; j < n; j += R){
+                for (int k = 0; k < mid; k++){
                     Comp x = a[j + k];
                     Comp y = w[op][d * k] * a[j + mid + k];
                     a[j + k] = x + y;
@@ -4266,64 +4254,44 @@ class Polynomial : public std::vector<T> {
     }
 
 public:
-    using std::vector<T>::vector;  // 继承vector的构造函数
-
-    constexpr friend Polynomial operator*(const Polynomial &a, const Polynomial &b) {
-        if (a.size() == 0 or b.size() == 0) {
+    using vector<T>::vector;
+    constexpr friend Polynomial operator*(const Polynomial &a, const Polynomial &b){
+        if (a.size() == 0 or b.size() == 0){
             return Polynomial();
         }
         int n = a.size() + b.size() - 1;
-        int _log = std::__lg(2 * n - 1);
+        int _log = __lg(2 * n - 1);
         int s = 1 << _log;
-        if (std::min(a.size(), b.size()) < 128) {
+        if (min(a.size(), b.size()) < 128){
             Polynomial res(n);
-            for (auto i = 0U; i < a.size(); i++) {
-                for (auto j = 0U; j < b.size(); j++) {
+            for (int i = 0; i < (int)a.size(); i++){
+                for (int j = 0; j < (int)b.size(); j++){
                     res[i + j] += a[i] * b[j];
                 }
             }
             return res;
         }
-
-        std::vector<Comp> p(s), q(s);
-        for (auto i = 0U; i < a.size(); i++) {
+        vector<Comp> p(s), q(s);
+        for (int i = 0; i < (int)a.size(); i++){
             p[i] = Comp(a[i], 0);
         }
-        for (auto i = 0U; i < b.size(); i++) {
+        for (int i = 0; i < (int)b.size(); i++){
             q[i] = Comp(b[i], 0);
         }
-
         fft(p, 0);
         fft(q, 0);
-        for (int i = 0; i < s; i++) {
-            p[i] = p[i] * q[i];  // 点值乘法
+        for (int i = 0; i < s; i++){
+            p[i] = p[i] * q[i];
         }
         fft(p, 1);
-
         Polynomial res(n);
-        for (int i = 0; i < n; i++) {
-            res[i] = p[i].real() / s;  // 默认浮点数
-            // 卷积后调用 llround() 得到整型
+        for (int i = 0; i < n; i++){
+            res[i] = p[i].real() / s;
         }
         return res;
     }
-
-    friend std::istream &operator>>(std::istream &is, Polynomial &a) {
-        int n = a.size();
-        for (int i = 0; i < n; i++) {
-            is >> a[i];
-        }
-        return is;
-    }
-    friend std::ostream &operator<<(std::ostream &os, const Polynomial &a) {
-        int n = a.size();
-        for (int i = 0; i < n; i++) {
-            os << a[i] << " \n"[i == n - 1];
-        }
-        return os;
-    }
 };
-using Poly = Polynomial<double, std::complex>;
+using Poly = Polynomial<double, complex>;
 ```
 
 ### 快速数论变换 NTT
@@ -8224,6 +8192,8 @@ $$
 
 ## 二维几何
 
+### Levis
+
 ```cpp
 #include<bits/stdc++.h>
 using namespace std;
@@ -8517,6 +8487,12 @@ signed main(){
 }
 ```
 
+### Trilliverse
+
+#### 点线凸包
+
+⚠默认`Point`的输入用的是`double`，如果题目给的是输入`int`请手动处理输入，具体为用`int`接受输入再调用`Polygon.add()`
+
 ```cpp
 // by trilliverse
 const double EPS = 1e-8;
@@ -8742,6 +8718,7 @@ struct Polygon {
     bool convex = true;  // whether to ensure convex
 
     Polygon() = default;
+    Polygon(int n) : p(n), convex(false) {}
     Polygon(vector<Point> pt, bool f = true) : p(std::move(pt)), convex(f) {}
 
     inline int size() const { return (int)p.size(); }
@@ -8977,7 +8954,11 @@ struct Polygon {
         return os;
     }
 };
+```
 
+#### 圆
+
+```cpp
 struct Circle {
     Point c;
     double r;
@@ -8993,7 +8974,7 @@ struct Circle {
     }
 
     // 三角形内切圆 UVA12304
-    Circle(Point a, Point b, Point c, bool f) {
+    Circle(Point a, Point b, Point c) {
         double A = b.dis(c);
         double B = c.dis(a);
         double C = a.dis(b);
@@ -9079,7 +9060,22 @@ struct Circle {
         l2 = Line(p, m - v);
         return 2;
     }
-
+	// 圆与直线交点
+    int intersectionToLine(const Line &l, Point &p1, Point &p2){
+        double d = l.disToLine(c);
+        if (sgn(d - r) > 0)
+            return 0;
+        Point proj = l.project(c);
+        if (sgn(d - r) == 0){
+            p1 = p2 = proj;
+            return 1;
+        }
+        double len = sqrt(max(0.0, r * r - d * d));
+        Point dir = l.dir().norm(1.0);
+        p1 = proj + dir * len;
+        p2 = proj - dir * len;
+        return 2;
+    }
     friend istream& operator>>(istream& is, Circle& cir) {
         return is >> cir.c >> cir.r;
     }
@@ -9087,7 +9083,11 @@ struct Circle {
         return os << cir.c << " " << fixed << setprecision(3) << cir.r;
     }
 };
+```
 
+#### 半平面交(未实现)
+
+```cpp
 struct halfplane : public Line {
     double angle;
     halfplane() {}
@@ -9164,6 +9164,16 @@ struct halfplanes {
     }
 };
 ```
+#### 杂项
+
+```cpp
+// 三角形面积
+double triangleArea(const Point &a, const Point &b, const Point &c){
+    return fabs(cross(a, b, c)) / 2.0;
+}
+```
+
+
 
 ## 三维几何
 
