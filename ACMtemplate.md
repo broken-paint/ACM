@@ -3882,98 +3882,96 @@ ll mul(ll a, ll b, ll p) {
 
 解决异或问题。原序列里的每一个数都可以由线性基里面的一些数异或得到，线性基里面任意一些数异或起来不等于0，线性基里面的数的个数唯一，且数的个数是最小的。
 
-### 插入
-
-d[i]存最高位1在第i位的数
-
-对于每个数x，假设最高位的1在第i位，如果d[i]等于0，d[i]=x，插入完成，否则x^=d[i]，继续插入
-
 ```cpp
-void insert(int x){
-    for(int i=51;i>=0;i--){
-        if(x>>i&1){
-            if(p[i]) x^=p[i];
-            else{
-                p[i]=x;
-                break;
+struct Linear_basis
+{
+    vector<int> p;
+    vector<int> d;
+    vector<int> mask; // 由哪些真实值异或而来
+    vector<int> real; // 真实值
+    int n;
+    bool flag = 0; // 有无0
+    Linear_basis(int n = 64) : n(n), p(n), mask(n), real(n) {}
+    // 插入一个数
+    void add(int x){
+        int _ = x;
+        int msk = 0;
+        for (int i = n - 1; ~i; i--){
+            if (!(x >> i))
+                continue;
+            if (!p[i]){
+                if (!x)
+                    flag = 1;
+                p[i] = x;
+                real[i] = _;
+                mask[i] = msk ^ (1ll << i);
+                return;
+            }
+            x ^= p[i];
+            msk ^= mask[i];
+        }
+    }
+    // 查询最大值/某个值能变成的最大值
+    int querymx(int x = 0){
+        int ret = x;
+        for (int i = n - 1; ~i; i--){
+            ret = max(ret, ret ^ p[i]);
+        }
+        return ret;
+    }
+    //查询最小值
+    int querymn(){
+        if (flag)
+            return 0;
+        for (int i = 0; i < n; i++){
+            if (!p[i])
+                continue;
+            return p[i];
+        }
+    }
+    // 询问某值，若能则返回该值如何被异或出来(msk里的每个1对应相应位置上的real)
+    int query(int x){
+        int msk = 0;
+        for (int i = n - 1; ~i; i--){
+            if ((x >> i) & 1){
+                msk ^= mask[i];
+                x ^= p[i];
+            }
+        }
+        if (!x)
+            return msk;
+        else
+            return -1;
+    }
+    // 重构一个各个位之间互不影响的d数组
+    void rebuild(){
+        for (int i = n - 1; ~i; i--){
+            for (int j = i - 1; ~j; j--){
+                if (p[i] >> j & 1)
+                    p[i] ^= p[j];
+            }
+        }
+        for (int i = 0; i < n; i++){
+            if (p[i]){
+                d.push_back(p[i]);
             }
         }
     }
-}
-```
-
-### 查询某个数能否被异或出来
-
-```cpp
-bool ask(int x){
-    for(int i=51;i>=0;i--){
-        if(x>>i&1){
-            x^=p[i];
+    // 查询第k小值(要先rebuild)
+    int querykth(int k){
+        if (flag){
+            if (k == 1)
+                return 0;
+            k--;
         }
-    }
-    return x==0;
-}
-```
-
-### 查询异或最大值
-
-```cpp
-int askmx(int x){
-    int ans=0;
-    for(int i=51;i>=0;i--){
-        if((ans^p[i])>ans) ans^=p[i];    
-    }
-    return ans;
-}
-```
-
-### 查询异或最小值
-
-```cpp
-int askminn(int x){
-    for(int i=51;i>=0;i--){
-        if(!p[i]){
-            return p[i];
-        } 
-    }
-    for(int i=0;i<=51;i++){
-        if(p[i]) return p[i];
-    }
-}
-```
-
-### 查询异或第k小
-
-重构一个各个位之间互不影响的d数组
-
-```cpp
-void rebuild(){
-    for(int i=51;i>=0;i--){
-        for(int j=i-1;j>=0;j--){
-            if(p[i]>>j&1) p[i]^=p[j];
+        int ans = 0;
+        for (int i = d.size() - 1; i >= 0; i--){
+            if (k >> i & 1)
+                ans ^= d[i];
         }
+        return ans;
     }
-    for(int i=0;i<=51;i++){
-        if(p[i]){
-            d.push_back(p[i]);
-        }
-    }
-}
-```
-
-```cpp
-//flag表示数组里面有没有0
-int querykth(int k){
-    if(flag){
-        if(k==1) return 0;
-        k--;
-    }
-    int ans=0;
-    for(int i=d.size()-1;i>=0;i--){
-        if(k>>i&1) ans^=d[i];
-    }
-    return ans;
-}
+};
 ```
 
 ## 扩展欧拉定理
