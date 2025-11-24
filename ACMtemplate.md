@@ -133,6 +133,7 @@ struct SegmentTree{
         pushup(id,l,r);
     }
     int query(int id,int l,int r,int x,int y){
+        if(x>y) return 0;
         if(x<=l&&r<=y) return node[id].sum;
         pushdown(id,l,r);
         int mid=l+(r-l>>1);
@@ -140,6 +141,20 @@ struct SegmentTree{
         if(x<=mid) ans+=query(id<<1,l,mid,x,y);
         if(y>mid) ans+=query(id<<1|1,mid+1,r,x,y);
         return ans;
+    }
+    //第一个满足前缀和>x的位置,找不到n+1
+    int upper_bound(int id,int l,int r,int x){
+        if(l==r){
+            if(node[id].sum>x) return l;
+            else return n+1;
+        }
+        pushdown(id,l,r);
+        int mid=l+(r-l>>1);
+        if(node[id<<1].sum>x){
+            return upper_bound(id<<1,l,mid,x);
+        }else{
+            return upper_bound(id<<1|1,mid+1,r,x-node[id<<1].sum);
+        }
     }
 };
 ```
