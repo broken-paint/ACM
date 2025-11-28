@@ -9279,11 +9279,11 @@ using Point = Point3<double>;
 
 ## SG函数
 
-$SG(x)$， $x$  是游戏的状态，若 $SG(x)=0$，先手必败，否则先手必胜
+$\textrm{SG(x)}$， $\textrm x$  是游戏的状态，若 $\textrm{SG(x)}=0$，先手必败，否则先手必胜
 
-设后继状态为 $a_1,a_2,\dots a_p$，$SG(x)=mex(SG(a1),SG(a2)……)$
+设后继状态为 $a_1,a_2,\dots a_p$，$\textrm{SG(x)}=\textrm{mex(SG}(a_1),\textrm{SG}(a_2)\dots \textrm{SG}(a_p))$
 
-一个游戏的 $\textrm{SG}$ 函数值等于各个游戏 $\textrm{SG}$ 函数值的 $nim$ 和（异或和）
+一个游戏的 $\textrm{SG}$ 函数值等于各个游戏 $\textrm{SG}$ 函数值的 $\textrm{nim}$ 和（异或和）
 
 ## 威佐夫博弈
 
@@ -9295,7 +9295,7 @@ $SG(x)$， $x$  是游戏的状态，若 $SG(x)=0$，先手必败，否则先手
 
 ## 数位 DP
 
-给定区间[l,r]，问区间满足条件的数有多少个，cal(r)-cal(l-1)
+给定区间 $[l,r]$，问区间满足条件的数有多少个，$\textrm{cal}(r)-\textrm{cal}(l-1)$
 
 windy数（不含前导0且相邻两个数字之差至少为2），求a到b中有多少个windy数
 
