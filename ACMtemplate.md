@@ -9593,3 +9593,13 @@ void date(int n, int &y, int &m, int &d) {
         m -= 12, ++y;
 }
 ```
+
+## 枚举子集
+
+复杂度 $\mathcal{O}(3^n)$
+
+```cpp
+for (int s = u; s; s = (s - 1) & u) {
+	// s 是 u 的一个非空子集 
+}
+```
