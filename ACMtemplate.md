@@ -9346,23 +9346,26 @@ signed main(){
 }
 ```
 
-# 随机算法
 
-## 模拟退火
+# 杂项
+
+## 随机算法
+
+### 模拟退火
 
 $T$：温度
 
-$△ T$：温度变化率，每次温度等于上一次T*△T，一般取0.95-0.99，模拟徐徐降温
+$△ T$：温度变化率，每次温度等于上一次 T*△T，一般取 0.95-0.99，模拟徐徐降温
 
 $x$：当前选择的解
 
 $△x$：解变动量
 
-$x1$：当前的目标解，等于x+△x
+$x1$：当前的目标解，等于 x+△x
 
-$△f$：当前解的函数值与目标解函数值的差值，等于$f(x)-f(x1)$
+$△f$：当前解的函数值与目标解函数值的差值，等于 $f(x)-f(x1)$
 
-每次的$△x$在一个大小与T成正比的值域内随机取值。如果$f(x1)<f(x)$，那么接受目标解x=x1，如果$f(x1)>f(x)$，则以一定的概率接受，概率是$e^{\frac{-△f}{T}}$，直到T趋近于0，循环结束
+每次的 $△x$ 在一个大小与 T 成正比的值域内随机取值。如果 $f(x1)<f(x)$，那么接受目标解 x=x 1，如果 $f(x1)>f(x)$，则以一定的概率接受，概率是 $e^{\frac{-△f}{T}}$，直到 T 趋近于 0，循环结束
 
 ```cpp
 #include<bits/stdc++.h>
@@ -9427,20 +9430,20 @@ signed main(){
 }
 ```
 
-# 平板电视
+## 平板电视
 
 ```cpp
 #include<bits/extc++.h>
 using namespace __gnu_pbds;
 ```
 
-# 拉链法哈希
+## 拉链法哈希
 
 ```cpp
 cc_hash_table <int,int> f;
 ```
 
-# 红黑树
+## 红黑树
 
 ```cpp
 __gnu_pbds::tree<Key, Mapped, Cmp_Fn = std::less<Key>, Tag = rb_tree_tag,
@@ -9456,18 +9459,18 @@ __gnu_pbds::tree<std::pair<int, int>, __gnu_pbds::null_type,
     trr;
 ```
 
-insert(x)：向树中插入一个元素 x，返回 std::pair<point_iterator, bool>。
-erase(x)：从树中删除一个元素/迭代器 x，返回一个 bool 表明是否删除成功。
-order_of_key(x)：返回 x 以 Cmp_Fn 比较的排名，**0开始**。
-find_by_order(x)：返回 Cmp_Fn 比较的排名所对应元素的迭代器。
-lower_bound(x)：以 Cmp_Fn 比较做 lower_bound，返回迭代器。
-upper_bound(x)：以 Cmp_Fn 比较做 upper_bound，返回迭代器。
-join(x)：将 x 树并入当前树，前提是两棵树的类型一样，x 树被删除。
-split(x,b)：以 Cmp_Fn 比较，小于等于 x 的属于当前树，其余的属于 b 树。
-empty()：返回是否为空。
-size()：返回大小。
+insert (x)：向树中插入一个元素 x，返回 std::pair<point_iterator, bool>。
+Erase (x)：从树中删除一个元素/迭代器 x，返回一个 bool 表明是否删除成功。
+Order_of_key (x)：返回 x 以 Cmp_Fn 比较的排名，**0 开始**。
+Find_by_order (x)：返回 Cmp_Fn 比较的排名所对应元素的迭代器。
+Lower_bound (x)：以 Cmp_Fn 比较做 lower_bound，返回迭代器。
+Upper_bound (x)：以 Cmp_Fn 比较做 upper_bound，返回迭代器。
+Join (x)：将 x 树并入当前树，前提是两棵树的类型一样，x 树被删除。
+Split (x, b)：以 Cmp_Fn 比较，小于等于 x 的属于当前树，其余的属于 b 树。
+Empty ()：返回是否为空。
+Size ()：返回大小。
 
-元素不可重，可以使用pair<int,int>加入时间戳来使元素可重
+元素不可重，可以使用 pair<int,int>加入时间戳来使元素可重
 
 ```cpp
 //插入
@@ -9492,7 +9495,7 @@ if(it==tr.end()) continue;
 it->first;
 ```
 
-# 快读快写
+## 快读快写
 
 ```cpp
 void get(int &x){
@@ -9523,7 +9526,7 @@ void print(__int128 x){
 }
 ```
 
-# 火车头
+## 火车头
 
 ```cpp
 #define fastcall __attribute__((optimize("-O3")))
@@ -9570,4 +9573,23 @@ void print(__int128 x){
 #pragma GCC optimize("-fexpensive-optimizations")
 #pragma GCC optimize("inline-functions-called-once")
 #pragma GCC optimize("-fdelete-null-pointer-checks")
+```
+
+## 日期公式
+
+```cpp
+// 从公元 1 年 1 月 1 日经过了多少天
+int getday(int y, int m, int d) {
+    if (m < 3)
+        --y, m += 12;
+    return (365 * y + y / 4 - y / 100 + y / 400 + (153 * (m - 3) + 2) / 5 + d - 307);
+}
+// 公元 1 年 1 月 1 日往后数 n 天是哪一天
+void date(int n, int &y, int &m, int &d) {
+    n += 429 + ((4 * n + 1227) / 146097 + 1) * 3 / 4;
+    y = (4 * n - 489) / 1461, n -= y * 1461 / 4;
+    m = (5 * n - 1) / 153, d = n - m * 153 / 5;
+    if (--m > 12)
+        m -= 12, ++y;
+}
 ```
