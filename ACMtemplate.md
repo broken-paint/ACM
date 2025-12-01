@@ -9599,7 +9599,9 @@ void date(int n, int &y, int &m, int &d) {
 复杂度 $\mathcal{O}(3^n)$
 
 ```cpp
-for (int s = u; s; s = (s - 1) & u) {
+for (int s = u; ; s = (s - 1) & u) {
 	// s 是 u 的一个非空子集 
+	
+	if (!s) break;
 }
 ```
