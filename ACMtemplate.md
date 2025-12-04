@@ -633,32 +633,27 @@ struct TRIE{
 ## ST 表
 
 ```cpp
-struct ST{
-    static vector<int> Log2;
+struct ST {
     vector<vector<int>> dp;
-    ST(int n,vector<int> &v){
-        for(int i=Log2.size();i<=n;i++){
-            if(i==0) Log2.push_back(0);
-            else if(i==1) Log2.push_back(0);
-            else Log2.push_back(Log2[i>>1]+1);
+    ST(int n, vector<int> &v) {
+        dp.resize(20);
+        for (int i = 0; i < 20; i++) {
+            dp[i].resize(n + 1);
         }
-        dp.resize(n+1);
-        for(int i=1;i<=n;i++){
-            dp[i].resize(20);
-            dp[i][0]=v[i];
+        for (int i = 1; i <= n; i++) {
+            dp[0][i] = v[i];
         }
-        for(int i=1;i<=18;i++){
-            for(int j=1;j+(1ll<<i)-1<=n;j++){
-                dp[j][i]=max(dp[j][i-1],dp[j+(1ll<<i-1)][i-1]);
+        for (int i = 1; i <= 18; i++) {
+            for (int j = 1; j + (1ll << i) - 1 <= n; j++) {
+                dp[i][j] = max(dp[i - 1][j], dp[i - 1][j + (1ll << i - 1)]);
             }
         }
     }
-    int query(int l,int r){
-        int k=Log2[r-l+1];
-        return max(dp[l][k],dp[r-(1ll<<k)+1][k]);
+    int query(int l, int r) {
+        int k = __lg(r - l + 1);
+        return max(dp[k][l], dp[k][r - (1ll << k) + 1]);
     }
 };
-vector<int> ST::Log2;
 ```
 
 ## 权值线段树
@@ -8205,6 +8200,67 @@ $$
 
 ## 二维几何
 
+### 平面最近点对
+
+```cpp
+struct Point {
+    double x, y;
+};
+struct CP {
+#define sqr(x) ((x) * (x))
+    Point A, B;
+    vector<Point> v;
+    double mn;
+    CP(int n, vector<Point> &_v) {
+        v = _v;
+        A = v[0];
+        B = v[1];
+        sort(v.begin(), v.end(), [](const Point &p1, const Point &p2) { return p1.x < p2.x; });
+        mn = 1e18;
+        dc(0, n);
+    }
+    void upd(const Point &p1, const Point &p2) {
+        double d2 = sqr(p1.x - p2.x) + sqr(p1.y - p2.y);
+        if (d2 < mn) {
+            mn = d2;
+            A = p1;
+            B = p2;
+        }
+    }
+    void dc(int l, int r) {
+        if (r - l <= 3) {
+            for (int i = l; i < r; ++i)
+                for (int j = i + 1; j < r; ++j)
+                    upd(v[i], v[j]);
+            sort(v.begin() + l, v.begin() + r, [](const Point &p1, const Point &p2) { return p1.y < p2.y; });
+            return;
+        }
+        int m = (l + r) >> 1;
+        double mid = v[m].x;
+        dc(l, m);
+        dc(m, r);
+        inplace_merge(v.begin() + l, v.begin() + m, v.begin() + r, [](const Point &p1, const Point &p2) { return p1.y < p2.y; });
+        vector<Point> t;
+        t.reserve(r - l);
+        for (int i = l; i < r; ++i) {
+            if (sqr(v[i].x - mid) < mn)
+                t.push_back(v[i]);
+        }
+        for (int i = 0; i < (int)t.size(); i++) {
+            for (int j = i + 1; j < (int)t.size() && sqr(t[j].y - t[i].y) < mn; j++) {
+                upd(t[i], t[j]);
+            }
+        }
+    }
+    double dis() {
+        return sqrt(sqr(A.x - B.x) + sqr(A.y - B.y));
+    }
+    double dis2() {
+        return sqr(A.x - B.x) + sqr(A.y - B.y);
+    }
+};
+```
+
 ### Levis
 
 ```cpp
@@ -9599,9 +9655,7 @@ void date(int n, int &y, int &m, int &d) {
 复杂度 $\mathcal{O}(3^n)$
 
 ```cpp
-for (int s = u; ; s = (s - 1) & u) {
+for (int s = u; s; s = (s - 1) & u) {
 	// s 是 u 的一个非空子集 
-	
-	if (!s) break;
 }
 ```
