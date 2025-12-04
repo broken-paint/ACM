@@ -5619,7 +5619,31 @@ signed main(){
 ### Zobrist Hash
 
 用于棋盘状态压缩，每个位置的每个棋子状态（例如（1,1）位置为黑棋）使用mt19937_64赋予一个随机值，最后整个棋盘的状态等于所有棋子的异或和
+## 狄利克雷卷积
+定义
+$$
+(f * g)(n) = \sum_{k \mid n} f(k) g\left(\frac{n}{k}\right) = \sum_{k \ell = n} f(k) g(\ell).
+$$
+常见卷积
+1. 单位函数 $\varepsilon$ 是莫比乌斯函数 $\mu$ 和常数函数 $1$ 的 Dirichlet 卷积：
+$$
+\varepsilon = \mu * 1 \quad \Longleftrightarrow \quad \varepsilon(n) = \sum_{d \mid n} \mu(d).
+$$
 
+2. 除数个数函数 $\tau$ 是常数函数 $1$ 和它自身的 Dirichlet 卷积：
+$$
+\tau = 1 * 1 \quad \Longleftrightarrow \quad \tau(n) = \sum_{d \mid n} 1.
+$$
+
+3. 除数和函数 $\sigma$ 是恒等函数 $\operatorname{id}$ 和常数函数 $1$ 的 Dirichlet 卷积：
+$$
+\sigma = \operatorname{id} * 1 \quad \Longleftrightarrow \quad \sigma(n) = \sum_{d \mid n} d.
+$$
+
+4. 欧拉函数 $\varphi$ 是恒等函数 $\operatorname{id}$ 和莫比乌斯函数 $\mu$ 的 Dirichlet 卷积：
+$$
+\varphi = \operatorname{id} * \mu \quad \Longleftrightarrow \quad \varphi(n) = \sum_{d \mid n} d \cdot \mu\left( \frac{n}{d} \right).
+$$
 # 图论
 
 ## Cayley 凯莱定理
@@ -8199,68 +8223,6 @@ $$
 # 计算几何
 
 ## 二维几何
-
-### 平面最近点对
-
-```cpp
-struct Point {
-    double x, y;
-};
-struct CP {
-#define sqr(x) ((x) * (x))
-    Point A, B;
-    vector<Point> v;
-    double mn;
-    CP(int n, vector<Point> &_v) {
-        v = _v;
-        A = v[0];
-        B = v[1];
-        sort(v.begin(), v.end(), [](const Point &p1, const Point &p2) { return p1.x < p2.x; });
-        mn = 1e18;
-        dc(0, n);
-    }
-    void upd(const Point &p1, const Point &p2) {
-        double d2 = sqr(p1.x - p2.x) + sqr(p1.y - p2.y);
-        if (d2 < mn) {
-            mn = d2;
-            A = p1;
-            B = p2;
-        }
-    }
-    void dc(int l, int r) {
-        if (r - l <= 3) {
-            for (int i = l; i < r; ++i)
-                for (int j = i + 1; j < r; ++j)
-                    upd(v[i], v[j]);
-            sort(v.begin() + l, v.begin() + r, [](const Point &p1, const Point &p2) { return p1.y < p2.y; });
-            return;
-        }
-        int m = (l + r) >> 1;
-        double mid = v[m].x;
-        dc(l, m);
-        dc(m, r);
-        inplace_merge(v.begin() + l, v.begin() + m, v.begin() + r, [](const Point &p1, const Point &p2) { return p1.y < p2.y; });
-        vector<Point> t;
-        t.reserve(r - l);
-        for (int i = l; i < r; ++i) {
-            if (sqr(v[i].x - mid) < mn)
-                t.push_back(v[i]);
-        }
-        for (int i = 0; i < (int)t.size(); i++) {
-            for (int j = i + 1; j < (int)t.size() && sqr(t[j].y - t[i].y) < mn; j++) {
-                upd(t[i], t[j]);
-            }
-        }
-    }
-    double dis() {
-        return sqrt(sqr(A.x - B.x) + sqr(A.y - B.y));
-    }
-    double dis2() {
-        return sqr(A.x - B.x) + sqr(A.y - B.y);
-    }
-};
-```
-
 ### Levis
 
 ```cpp
