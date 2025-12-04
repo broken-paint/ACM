@@ -8334,6 +8334,61 @@ struct Point{
     Point(double x,double y):x(x),y(y){}
     Point(){}
 };
+struct ClosestPair{
+    vector<Point> p;
+    vector<int> tmp_idx;
+    ClosestPair(vector<Point> points) : p(points) {
+        tmp_idx.resize(p.size());
+    }
+    void merge_sort(vector<int> &idx, int l, int r) {
+        if (l >= r) return;
+        int mid = (l + r) >> 1;
+        int i = l, j = mid + 1, k = l;
+        while (i <= mid && j <= r) {
+            if (p[idx[i]].y < p[idx[j]].y) tmp_idx[k++] = idx[i++];
+            else tmp_idx[k++] = idx[j++];
+        }
+        while (i <= mid) tmp_idx[k++] = idx[i++];
+        while (j <= r) tmp_idx[k++] = idx[j++];
+        for (int i = l; i <= r; i++) idx[i] = tmp_idx[i];
+    }
+    double solve(vector<int> &idx, int l, int r) {
+        if (l >= r) return 1e18;
+        if (l + 1 == r) {
+            if (p[idx[l]].y > p[idx[r]].y) swap(idx[l], idx[r]);
+            return p[idx[l]].dis(p[idx[r]]);
+        }
+        int mid = (l + r) >> 1;
+        double mid_x = p[idx[mid]].x;
+        double d1 = solve(idx, l, mid);
+        double d2 = solve(idx, mid + 1, r);
+        double d = min(d1, d2);
+        merge_sort(idx, l, r);
+        vector<int> strip;
+        for (int i = l; i <= r; i++) {
+            if (fabs(p[idx[i]].x - mid_x) < d) {
+                strip.push_back(idx[i]);
+            }
+        }
+        for (int i = 0; i < strip.size(); i++) {
+            for (int j = i + 1; j < strip.size(); j++) {
+                if (p[strip[j]].y - p[strip[i]].y >= d) break;
+                d = min(d, p[strip[i]].dis(p[strip[j]]));
+            }
+        }
+        return d;
+    }
+    double getMinDist() {
+        int n = p.size();
+        if (n <= 1) return 1e18;
+        vector<int> idx(n);
+        iota(idx.begin(), idx.end(), 0);
+        sort(idx.begin(), idx.end(), [&](int a, int b) {
+            return p[a].x < p[b].x || (p[a].x == p[b].x && p[a].y < p[b].y);
+        });
+        return solve(idx, 0, n - 1);
+    }
+};
 struct Line{
     //过x点，方向向量为y
     Point x,y;
