@@ -8205,6 +8205,67 @@ $$
 
 ## 二维几何
 
+### 平面最近点对
+
+```cpp
+struct Point {
+    double x, y;
+};
+struct CP {
+#define sqr(x) ((x) * (x))
+    Point A, B;
+    vector<Point> v;
+    double mn;
+    CP(int n, vector<Point> &_v) {
+        v = _v;
+        A = v[0];
+        B = v[1];
+        sort(v.begin(), v.end(), [](const Point &p1, const Point &p2) { return p1.x < p2.x; });
+        mn = 1e18;
+        dc(0, n);
+    }
+    void upd(const Point &p1, const Point &p2) {
+        double d2 = sqr(p1.x - p2.x) + sqr(p1.y - p2.y);
+        if (d2 < mn) {
+            mn = d2;
+            A = p1;
+            B = p2;
+        }
+    }
+    void dc(int l, int r) {
+        if (r - l <= 3) {
+            for (int i = l; i < r; ++i)
+                for (int j = i + 1; j < r; ++j)
+                    upd(v[i], v[j]);
+            sort(v.begin() + l, v.begin() + r, [](const Point &p1, const Point &p2) { return p1.y < p2.y; });
+            return;
+        }
+        int m = (l + r) >> 1;
+        double mid = v[m].x;
+        dc(l, m);
+        dc(m, r);
+        inplace_merge(v.begin() + l, v.begin() + m, v.begin() + r, [](const Point &p1, const Point &p2) { return p1.y < p2.y; });
+        vector<Point> t;
+        t.reserve(r - l);
+        for (int i = l; i < r; ++i) {
+            if (sqr(v[i].x - mid) < mn)
+                t.push_back(v[i]);
+        }
+        for (int i = 0; i < (int)t.size(); i++) {
+            for (int j = i + 1; j < (int)t.size() && sqr(t[j].y - t[i].y) < mn; j++) {
+                upd(t[i], t[j]);
+            }
+        }
+    }
+    double dis() {
+        return sqrt(sqr(A.x - B.x) + sqr(A.y - B.y));
+    }
+    double dis2() {
+        return sqr(A.x - B.x) + sqr(A.y - B.y);
+    }
+};
+```
+
 ### Levis
 
 ```cpp
@@ -9599,9 +9660,7 @@ void date(int n, int &y, int &m, int &d) {
 复杂度 $\mathcal{O}(3^n)$
 
 ```cpp
-for (int s = u; ; s = (s - 1) & u) {
+for (int s = u; s; s = (s - 1) & u) {
 	// s 是 u 的一个非空子集 
-	
-	if (!s) break;
 }
 ```
