@@ -633,32 +633,27 @@ struct TRIE{
 ## ST 表
 
 ```cpp
-struct ST{
-    static vector<int> Log2;
+struct ST {
     vector<vector<int>> dp;
-    ST(int n,vector<int> &v){
-        for(int i=Log2.size();i<=n;i++){
-            if(i==0) Log2.push_back(0);
-            else if(i==1) Log2.push_back(0);
-            else Log2.push_back(Log2[i>>1]+1);
+    ST(int n, vector<int> &v) {
+        dp.resize(20);
+        for (int i = 0; i < 20; i++) {
+            dp[i].resize(n + 1);
         }
-        dp.resize(n+1);
-        for(int i=1;i<=n;i++){
-            dp[i].resize(20);
-            dp[i][0]=v[i];
+        for (int i = 1; i <= n; i++) {
+            dp[0][i] = v[i];
         }
-        for(int i=1;i<=18;i++){
-            for(int j=1;j+(1ll<<i)-1<=n;j++){
-                dp[j][i]=max(dp[j][i-1],dp[j+(1ll<<i-1)][i-1]);
+        for (int i = 1; i <= 18; i++) {
+            for (int j = 1; j + (1ll << i) - 1 <= n; j++) {
+                dp[i][j] = max(dp[i - 1][j], dp[i - 1][j + (1ll << i - 1)]);
             }
         }
     }
-    int query(int l,int r){
-        int k=Log2[r-l+1];
-        return max(dp[l][k],dp[r-(1ll<<k)+1][k]);
+    int query(int l, int r) {
+        int k = __lg(r - l + 1);
+        return max(dp[k][l], dp[k][r - (1ll << k) + 1]);
     }
 };
-vector<int> ST::Log2;
 ```
 
 ## 权值线段树
