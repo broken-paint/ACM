@@ -28,7 +28,8 @@ struct BIT{
 };
 ```
 
-区间最值
+区间最大值
+维护$[0,n]$这个区间
 
 ```cpp
 struct BIT{
@@ -39,11 +40,12 @@ struct BIT{
         return x&(-x);
     }
     BIT(int n){
-        this->n=n;
-        tree.resize(n+1,0);
-        raw.resize(n+1,0);
+        this->n=n+1;
+        tree.resize(n+2,0);
+        raw.resize(n+2,0);
     }
     void update(int x,int y){
+        ++x;
         raw[x]=y;
         for(int i=x;i<=n;i+=lowbit(i)){
             tree[i]=raw[i];
@@ -53,6 +55,7 @@ struct BIT{
         }
     }
     int query(int x,int y){
+        ++x,++y;
         if(x>y) return 0;
         int ans=0;
         while(x<=y){
@@ -69,7 +72,48 @@ struct BIT{
     }
 };
 ```
-
+区间最小值
+```cpp
+struct BIT{
+    vector<int> tree;
+    vector<int> raw;
+    int n;
+    inline int lowbit(int x){
+        return x&(-x);
+    }
+    BIT(int n){
+        this->n=n+1;
+        tree.resize(n+2,0);
+        raw.resize(n+2,0);
+    }
+    void update(int x,int y){
+        ++x;
+        raw[x]=y;
+        for(int i=x;i<=n;i+=lowbit(i)){
+            tree[i]=raw[i];
+            for(int j=1;j<lowbit(i);j<<=1){
+                tree[i]=min(tree[i],tree[i-j]);
+            }
+        }
+    }
+    int query(int x,int y){
+        ++x,++y;
+        if(x>y) return 0;
+        int ans=0;
+        while(x<=y){
+            int nx=y-lowbit(y)+1;
+            if(nx>=x){
+                ans=min(ans,tree[y]);
+                y=nx-1;
+            }else{
+                ans=min(ans,raw[y]);
+                --y;
+            }
+        }
+        return ans;
+    }
+};
+```
 ## 线段树
 
 ```cpp
