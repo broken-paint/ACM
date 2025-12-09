@@ -98,7 +98,7 @@ struct BIT{
     }
     int query(int x,int y){
         ++x,++y;
-        if(x>y) return 0;
+        if(x>y) return 1e18;
         int ans=1e18;
         while(x<=y){
             int nx=y-lowbit(y)+1;
