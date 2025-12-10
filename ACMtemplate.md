@@ -73,87 +73,97 @@ struct BIT{
 ## 线段树
 
 ```cpp
-struct SegmentTree{
-    struct edge{
+struct SegmentTree {
+    struct edge {
         int sum;
-        edge(){
-            sum=0;
+        edge() {
+            sum = 0;
         }
     };
     vector<int> lazy;
     vector<edge> node;
     int n;
-    void pushup(int id,int l,int r){
-        node[id].sum=node[id<<1].sum+node[id<<1|1].sum;
+    void pushup(int id, int l, int r) {
+        node[id].sum = node[id << 1].sum + node[id << 1 | 1].sum;
     }
-    void pushdown(int id,int l,int r){
-        if(lazy[id]){
-            int mid=l+(r-l>>1);
-            lazy[id<<1]+=lazy[id];
-            lazy[id<<1|1]+=lazy[id];
-            node[id<<1].sum+=(mid-l+1)*lazy[id];
-            node[id<<1|1].sum+=(r-mid)*lazy[id];
-            lazy[id]=0;
+    void pushdown(int id, int l, int r) {
+        if (lazy[id]) {
+            int mid = l + (r - l >> 1);
+            lazy[id << 1] += lazy[id];
+            lazy[id << 1 | 1] += lazy[id];
+            node[id << 1].sum += (mid - l + 1) * lazy[id];
+            node[id << 1 | 1].sum += (r - mid) * lazy[id];
+            lazy[id] = 0;
         }
     }
-    SegmentTree(int n):n(n){
-        node.resize((n<<2)+5);
-        lazy.assign((n<<2)+5,0);
+    SegmentTree(int n) : n(n) {
+        node.resize((n << 2) + 5);
+        lazy.assign((n << 2) + 5, 0);
     }
-    SegmentTree(){}
-    void init(vector<int> &v){
-        function<void(int,int,int)> buildtree=[&](int id,int l,int r){
-            lazy[id]=0;
-            if(l==r){
-                node[id].sum=v[l];
+    SegmentTree() {}
+    void init(vector<int> &v) {
+        auto buildtree = [&](auto self, int id, int l, int r) -> void {
+            lazy[id] = 0;
+            if (l == r) {
+                node[id].sum = v[l];
                 return;
             }
-            int mid=l+(r-l>>1);
-            buildtree(id<<1,l,mid);
-            buildtree(id<<1|1,mid+1,r);
-            pushup(id,l,r);
+            int mid = l + (r - l >> 1);
+            self(self, id << 1, l, mid);
+            self(self, id << 1 | 1, mid + 1, r);
+            pushup(id, l, r);
         };
-        buildtree(1,1,n);
+        buildtree(buildtree, 1, 1, n);
     }
-    SegmentTree(int n,vector<int> &v):n(n){
-        node.resize((n<<2)+5);
-        lazy.assign((n<<2)+5,0);
+    SegmentTree(int n, vector<int> &v) : n(n) {
+        node.resize((n << 2) + 5);
+        lazy.assign((n << 2) + 5, 0);
         init(v);
     }
-    void update(int id,int l,int r,int x,int y,int delta){
-        if(x<=l&&r<=y){
-            lazy[id]+=delta;
-            node[id].sum+=delta*(r-l+1);
+    void update(int id, int l, int r, int x, int y, int delta) {
+        if (x > y)
+            return;
+        if (x <= l && r <= y) {
+            lazy[id] += delta;
+            node[id].sum += delta * (r - l + 1);
             return;
         }
-        pushdown(id,l,r);
-        int mid=l+(r-l>>1);
-        if(x<=mid) update(id<<1,l,mid,x,y,delta);
-        if(y>mid) update(id<<1|1,mid+1,r,x,y,delta);
-        pushup(id,l,r);
+        pushdown(id, l, r);
+        int mid = l + (r - l >> 1);
+        if (x <= mid)
+            update(id << 1, l, mid, x, y, delta);
+        if (y > mid)
+            update(id << 1 | 1, mid + 1, r, x, y, delta);
+        pushup(id, l, r);
     }
-    int query(int id,int l,int r,int x,int y){
-        if(x>y) return 0;
-        if(x<=l&&r<=y) return node[id].sum;
-        pushdown(id,l,r);
-        int mid=l+(r-l>>1);
-        int ans=0;
-        if(x<=mid) ans+=query(id<<1,l,mid,x,y);
-        if(y>mid) ans+=query(id<<1|1,mid+1,r,x,y);
+    int query(int id, int l, int r, int x, int y) {
+        if (x > y)
+            return 0;
+        if (x <= l && r <= y)
+            return node[id].sum;
+        pushdown(id, l, r);
+        int mid = l + (r - l >> 1);
+        int ans = 0;
+        if (x <= mid)
+            ans += query(id << 1, l, mid, x, y);
+        if (y > mid)
+            ans += query(id << 1 | 1, mid + 1, r, x, y);
         return ans;
     }
-    //第一个满足前缀和>x的位置,找不到n+1
-    int upper_bound(int id,int l,int r,int x){
-        if(l==r){
-            if(node[id].sum>x) return l;
-            else return n+1;
+    // 第一个满足前缀和>x的位置,找不到n+1
+    int upper_bound(int id, int l, int r, int x) {
+        if (l == r) {
+            if (node[id].sum > x)
+                return l;
+            else
+                return n + 1;
         }
-        pushdown(id,l,r);
-        int mid=l+(r-l>>1);
-        if(node[id<<1].sum>x){
-            return upper_bound(id<<1,l,mid,x);
-        }else{
-            return upper_bound(id<<1|1,mid+1,r,x-node[id<<1].sum);
+        pushdown(id, l, r);
+        int mid = l + (r - l >> 1);
+        if (node[id << 1].sum > x) {
+            return upper_bound(id << 1, l, mid, x);
+        } else {
+            return upper_bound(id << 1 | 1, mid + 1, r, x - node[id << 1].sum);
         }
     }
 };
@@ -6038,35 +6048,41 @@ n元一次不等式组，包含n个变量x1……xn，以及m个约束条件，�
 ### tarjan
 
 ```cpp
-function<void(int)> tarjan=[&](int x){
-        dfn[x]=low[x]=++cnt;
+vector<int> dfn(n + 1), low(n + 1), belong(n + 1);
+    vector<bool> instack(n + 1);
+    stack<int> st;
+    vector<vector<int>> ans;
+    int cnt = 0;
+    auto tarjan = [&](auto &&self, int x) -> void {
+        dfn[x] = low[x] = ++cnt;
         st.push(x);
-        instack[x]=1;
-        for(int &p:v[x]){
-            if(!dfn[p]){
-                tarjan(p);
-                low[x]=min(low[x],low[p]);
-            }else if(instack[p]){
-                low[x]=min(low[x],dfn[p]);
+        instack[x] = 1;
+        for (int &p : g[x]) {
+            if (!dfn[p]) {
+                self(self, p);
+                low[x] = min(low[x], low[p]);
+            } else if (instack[p]) {
+                low[x] = min(low[x], dfn[p]);
             }
         }
-        if(low[x]==dfn[x]){
+        if (low[x] == dfn[x]) {
             ans.push_back({});
-            while(!st.empty()&&st.top()!=x){
-                int f=st.top();
+            while (!st.empty() && st.top() != x) {
+                int f = st.top();
                 st.pop();
                 ans.back().push_back(f);
-                belong[f]=ans.size();
-                instack[f]=0;
+                belong[f] = (int)ans.size() - 1;
+                instack[f] = 0;
             }
             st.pop();
             ans.back().push_back(x);
-            instack[x]=0;
-            belong[x]=ans.size();
+            instack[x] = 0;
+            belong[x] = (int)ans.size() - 1;
         }
     };
-    for(int i=1;i<=n;i++){
-        if(!dfn[i]) tarjan(i);
+    for (int i = 1; i <= n; i++) {
+        if (!dfn[i])
+            tarjan(tarjan, i);
     }
 ```
 
