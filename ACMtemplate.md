@@ -28,93 +28,47 @@ struct BIT{
 };
 ```
 
-区间最大值
-维护$[0,n]$这个区间
+前缀区间最值
+修改只能往大了修改，$newvalue>=oldvalue$
 
-```cpp
+```c++
 struct BIT{
     vector<int> tree;
-    vector<int> raw;
     int n;
     inline int lowbit(int x){
         return x&(-x);
     }
     BIT(int n){
         this->n=n+1;
-        tree.resize(n+2,0);
-        raw.resize(n+2,0);
+        tree.resize(n+1,-INF);
     }
     void update(int x,int y){
         ++x;
-        raw[x]=y;
+        tree[x]=y;
         for(int i=x;i<=n;i+=lowbit(i)){
-            tree[i]=raw[i];
-            for(int j=1;j<lowbit(i);j<<=1){
-                tree[i]=max(tree[i],tree[i-j]);
-            }
+            tree[i]=max(tree[i],y);
         }
     }
-    int query(int x,int y){
-        ++x,++y;
-        if(x>y) return 0;
-        int ans=0;
-        while(x<=y){
-            int nx=y-lowbit(y)+1;
-            if(nx>=x){
-                ans=max(ans,tree[y]);
-                y=nx-1;
-            }else{
-                ans=max(ans,raw[y]);
-                --y;
-            }
-        }
-        return ans;
-    }
-};
-```
-区间最小值
-```cpp
-struct BIT{
-    vector<int> tree;
-    vector<int> raw;
-    int n;
-    inline int lowbit(int x){
-        return x&(-x);
-    }
-    BIT(int n){
-        this->n=n+1;
-        tree.resize(n+2,0);
-        raw.resize(n+2,0);
-    }
-    void update(int x,int y){
+    void clear(int x){
         ++x;
-        raw[x]=y;
+        tree[x]=-INF;
         for(int i=x;i<=n;i+=lowbit(i)){
-            tree[i]=raw[i];
-            for(int j=1;j<lowbit(i);j<<=1){
-                tree[i]=min(tree[i],tree[i-j]);
-            }
+            tree[i]=-INF;
         }
     }
-    int query(int x,int y){
-        ++x,++y;
-        if(x>y) return 1e18;
-        int ans=1e18;
-        while(x<=y){
-            int nx=y-lowbit(y)+1;
-            if(nx>=x){
-                ans=min(ans,tree[y]);
-                y=nx-1;
-            }else{
-                ans=min(ans,raw[y]);
-                --y;
-            }
+    int query(int x){
+        ++x;
+        if(x<1) return -INF;
+        int ans=-INF;
+        for(int i=x;i>=1;i-=lowbit(i)){
+            ans=max(ans,tree[i]);
         }
         return ans;
     }
-};
-```
+};```
 ## 线段树
+update和query的时候一定要检查$[l,r]$是否正确
+加l>r return 0
 
 ```cpp
 struct SegmentTree{
@@ -253,7 +207,7 @@ struct SegmentTree{
 ```
 
 ## 线段树合并
-
+update和merge之后一定要记得接收新的根编号。
 ```cpp
 #include<bits/stdc++.h>
 using namespace std;
@@ -1157,6 +1111,43 @@ signed main(){
 }
 ```
 
+## 可删堆
+```c++
+template <class T, class Cmp=less<T>>
+class DeletableHeap {
+    priority_queue<T, std::vector<T>, Cmp> items{};
+    priority_queue<T, std::vector<T>, Cmp> trash{};
+    void sync() {
+        while (!trash.empty() and items.top() == trash.top()) {
+            items.pop();
+            trash.pop();
+        }
+    }
+public:
+    bool empty(){
+        sync();
+        return items.empty();
+    }
+    int size() {
+        assert(items.size() >= trash.size());
+        return items.size() - trash.size();
+    }
+    void push(T x) {
+        items.push(x);
+    }
+    void erase(T x) {
+        trash.push(x);
+    }
+    T top() {
+        sync();
+        return items.top();
+    }
+    void pop() {
+        sync();
+        items.pop();
+    }
+};
+```
 ## LCT
 
 ```cpp
@@ -3180,7 +3171,7 @@ signed main(){
 
 ## 卡特兰数
 
-有一个大小为 $n×n$ 的方格图，左下角为 $(0,0)$ ，右上角为 $(n,n)$ ，从左下角开始每次只能向右或者向上走一个单位，不能走到 $y=x$ 上方（但可以触碰），有几种可能的路径
+	有一个大小为 $n×n$ 的方格图，左下角为 $(0,0)$ ，右上角为 $(n,n)$ ，从左下角开始每次只能向右或者向上走一个单位，不能走到 $y=x$ 上方（但可以触碰），有几种可能的路径
 
 前几项：$1\ 1\ 2\ 5\ 14\ 42$
 
@@ -7765,6 +7756,8 @@ signed main(){
 
 继续对于他的每个儿子节点作为根的子树，继续找重心，继续上面的操作。
 
+一定要注意getdis的时候先不要把信息合并到主树上，跑完getdis再把信息合并到已遍历的主树上。
+
 ```cpp
 //树上是否存在边权和为k的路径
 #include<bits/stdc++.h>
@@ -8263,7 +8256,27 @@ $$
 $$
 
 
+## prufer序列
 
+长度为n-2，与一个顶点标过号的点数为n的无根树一一对应。
+
+无根树转prufer序列：
+1. 找到编号最小的度数为1的点
+2. 删除该节点，并在序列中添加与该节点相连的节点的编号
+3. 重复1,2操作，直到只剩下两个节点
+
+prufer转无根树:
+1. 每次取出prufer序列中最前面的元素u
+2. 在点集中找到编号最小的没有在prufer中出现的元素v
+3. u,v连边，分别删除
+4. 最后点集剩下两个点，连边
+
+性质:
+1. prufer中某个编号出现的次数等于这个点在无根树中的度数-1
+2. n点的无根树唯一对应了一个长度为n-2的数列，数列中每个数都在1到n的范围内
+3. n个点的无向完全图的生成树个数：$n^{n-2}$
+4. n个节点度依次为$d_1,d_2,...,d_n$的无根树共有$\frac{(n-2)!}{\prod_{i=1}^n(d_i-1)!}$个
+5. n个点的有标号有根树共有$n^{(n-2)}*n=n^{n-1}$个
 # 计算几何
 
 ## 二维几何
@@ -9718,5 +9731,137 @@ void date(int n, int &y, int &m, int &d) {
 ```cpp
 for (int s = u; s; s = (s - 1) & u) {
 	// s 是 u 的一个非空子集 
+}
+```
+
+## cdq分治
+
+第一维排序，每次cdq分治统计按照第一维排序时，下标$[l,mid]$对$[mid+1,r]$的贡献。
+
+一般第二维归并（保证了第二维小的在前面），第三维bit or 线段树（查询比当前第三维小的）。
+
+cdq分治的时候，算完贡献，记得清空BIT。
+
+选择完一个元素，记得i++/j++。
+
+cdq分治完记得把临时数组的排序结果移回原数组。
+
+cdq分治优化dp这类的题目，可能$[mid+1,r]$这个区间，依赖于$[l,mid]$这个区间的结果，此时的执行顺序应为
+1. 递归$[l,mid]$
+2. 处理$[l,mid]$对$[mid+1,r]$的贡献
+3. 再递归$[mid+1,r]$的贡献
+
+第二步的时候，先对右半部分第二维排好序，再归并，然后把右半部分还原回按照第一维排序的形式，再进行第三步操作。
+```c++
+#include<bits/stdc++.h>
+using namespace std;
+#define int long long
+struct BIT{
+    vector<int> tree;
+    int n;
+    inline int lowbit(int x){
+        return x&(-x);
+    }
+    BIT(int n){
+        this->n=n;
+        tree.resize(n+1,0);
+    }
+    void update(int x,int delta){
+        ++x;
+        for(int i=x;i<=n;i+=lowbit(i)) tree[i]+=delta; 
+    }
+    int query(int x,int y){
+        ++x,++y;
+        if(x>y) return 0;
+        int ans=0;
+        for(int i=y;i>=1;i-=lowbit(i)) ans+=tree[i];
+        for(int i=x-1;i>=1;i-=lowbit(i)) ans-=tree[i];
+        return ans;
+    }
+};
+void solve(){
+    vector<array<int,5>> v;
+    map<array<int,3>,int> mp;
+    int op,cnt=0,w;
+    for(int i=1;;i++){
+        cin>>op;
+        if(op==3) break;
+        if(op==0){
+            cin>>w;
+            continue;
+        }
+        if(op==1){
+            int x,y,a;
+            cin>>x>>y>>a;
+            v.push_back({0,i,x,y,a});
+        }else{
+            int x1,y1,x2,y2;
+            cin>>x1>>y1>>x2>>y2;
+            v.push_back({1,i,x2,y2,cnt});
+            v.push_back({1,i,x1-1,y1-1,cnt});
+            v.push_back({-1,i,x1-1,y2,cnt});
+            v.push_back({-1,i,x2,y1-1,cnt});
+            cnt++;
+        }
+    }
+    BIT bit(2e5);
+    vector<int> ans(cnt);
+    sort(v.begin(),v.end(),[](const auto &a,const auto &b){
+        if(a[2]!=b[2]) return a[2]<b[2];
+        else if(a[3]!=b[3]) return a[3]<b[3];
+        else return a[1]<b[1];
+    });
+    vector<array<int,5>> tmp(v.size());
+    auto cdq=[&](auto &&self,int l,int r){
+        if(l>=r) return;
+        int mid=l+(r-l>>1);
+        self(self,l,mid);
+        self(self,mid+1,r);
+        queue<array<int,2>> q;
+        for(int i=l,j=mid+1,cnt=l;cnt<=r;cnt++){
+            if(i<=mid&&j<=r){
+                if(v[i][3]<v[j][3]||v[i][3]==v[j][3]&&v[i][1]<v[j][1]){
+                    if(v[i][0]==0){
+                        bit.update(v[i][1],v[i][4]);
+                        q.push({v[i][1],v[i][4]});
+                    }
+                    tmp[cnt]=move(v[i++]);
+                }else{
+                    if(v[j][0]){
+                        ans[v[j][4]]+=v[j][0]*bit.query(1,v[j][1]-1);
+                    }
+                    tmp[cnt]=move(v[j++]);
+                }
+            }else if(i<=mid){
+                if(v[i][0]==0){
+                    bit.update(v[i][1],v[i][4]);
+                    q.push({v[i][1],v[i][4]});
+                }
+                tmp[cnt]=move(v[i++]);
+            }else{
+                if(v[j][0]){
+                    ans[v[j][4]]+=v[j][0]*bit.query(1,v[j][1]-1);
+                }
+                tmp[cnt]=move(v[j++]);
+            }
+        }
+        for(int i=l;i<=r;i++){
+            v[i]=move(tmp[i]);
+        }
+        while(!q.empty()){
+            auto [a,b]=q.front();
+            q.pop();
+            bit.update(a,-b);
+        }
+    };
+    cdq(cdq,0,v.size()-1);
+    for(int i=0;i<ans.size();i++) cout<<ans[i]<<"\n";
+}
+signed main(){
+    cin.tie(nullptr)->sync_with_stdio(0);
+    int t=1;
+    //cin>>t;
+    while(t--) solve();
+    return 0;
 }
 ```
