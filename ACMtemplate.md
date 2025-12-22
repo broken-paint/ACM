@@ -65,8 +65,11 @@ struct BIT{
         }
         return ans;
     }
-};```
+};
+```
+
 ## 线段树
+
 update和query的时候一定要检查$[l,r]$是否正确
 加l>r return 0
 
@@ -7884,6 +7887,187 @@ signed main(){
 
 每个点子树大小的和为$nlogn$。
 
+建虚树的时候注意别用原树的边来建了。
+
+```c++
+void solve(){
+    int n,q,A;
+    cin>>n>>q>>A;
+    vector<int> xx(n+1);
+    for(int i=1;i<=n;i++) cin>>xx[i];
+    vector<vector<pair<int,int>>> v(n+1);
+    for(int i=1;i<n;i++){
+        int x,y,w;
+        cin>>x>>y>>w;
+        v[x].emplace_back(y,w);
+        v[y].emplace_back(x,w);
+    }
+    vector<int> sz(n+1);
+    vector<bool> vis(n+1);
+    auto getsize=[&](auto &&self,int x,int fa)->void{
+        sz[x]=1;
+        for(auto &[to,w]:v[x]){
+            if(to==fa||vis[to]) continue;
+            self(self,to,x);
+            sz[x]+=sz[to];
+        }
+    };
+    auto getzx=[&](int x,int fa,int tot){
+        int rt=0;
+        auto dfs=[&](auto &&self,int x,int fa)->void{
+            int maxn=0;
+            for(auto &[to,w]:v[x]){
+                if(to==fa||vis[to]) continue;
+                self(self,to,x);
+                maxn=max(maxn,sz[to]);
+            }
+            maxn=max(maxn,tot-sz[x]);
+            if(maxn<=tot/2) rt=x;
+        };
+        dfs(dfs,x,fa);
+        return rt;
+    };
+    vector<vector<int>> vv(n+1);
+    vector<int> fa(n+1);
+    vector<unordered_map<int,int>> sonid(n+1);
+    auto sol=[&](auto &&self,int x)->void{
+        vis[x]=1;
+        int id=0;
+        for(auto &[to,w]:v[x]){
+            if(vis[to]) continue;
+            getsize(getsize,to,x);
+            int rt=getzx(to,x,sz[to]);
+            fa[rt]=x;
+            vv[x].push_back(rt);
+            sonid[x][rt]=id++;
+            self(self,rt);
+        }
+    };
+    getsize(getsize,1,0);
+    int rt=getzx(1,0,n);
+    sol(sol,rt);
+    vector<pair<int,int>> lcaqu(1);
+    vector<int> lcadfn(n+1),dep(n+1),dis(n+1);
+    auto lcadfs=[&](auto &&self,int x,int fa)->void{
+        lcadfn[x]=lcaqu.size();
+        dep[x]=dep[fa]+1;
+        lcaqu.emplace_back(dep[x],x);
+        for(auto &[to,w]:v[x]){
+            if(to==fa) continue;
+            dis[to]=dis[x]+w;
+            self(self,to,x);
+            lcaqu.emplace_back(dep[x],x);
+        }
+    };
+    lcadfs(lcadfs,1,0);
+    ST st(lcaqu.size()-1,lcaqu);
+    auto getlca=[&](int x,int y){
+        int l=lcadfn[x],r=lcadfn[y];
+        if(l>r) swap(l,r);
+        return st.query(l,r);
+    };
+    auto getdis=[&](int x,int y){
+        int lca=getlca(x,y);
+        return dis[x]+dis[y]-2*dis[lca];
+    };
+    //i这个中心，年龄为[1,j]的dis和
+    //i这个中心，年龄为[1,j]的数量
+    vector<vector<pair<int,int>>> sum(n+1),cnt(n+1);
+    vector<vector<vector<pair<int,int>>>> sum1(n+1),cnt1(n+1);
+    auto init=[&](auto &&self,int x)->void{
+        stack<pair<int,int>> st;
+        st.emplace(x,0);
+        sum1[x].resize(sonid[x].size());
+        cnt1[x].resize(sonid[x].size());
+        while(!st.empty()){
+            auto [now,f]=st.top();
+            st.pop();
+            sum[x].emplace_back(xx[now],getdis(x,now));
+            cnt[x].emplace_back(xx[now],1);
+            if(f){
+                sum1[x][sonid[x][f]].emplace_back(xx[now],getdis(x,now));
+                cnt1[x][sonid[x][f]].emplace_back(xx[now],1);
+            }
+            for(auto &to:vv[now]){
+                if(x==now){
+                    st.emplace(to,to);
+                }else{
+                    st.emplace(to,f);
+                }
+            }
+        }
+        sort(sum[x].begin(),sum[x].end());
+        for(int i=1;i<sum[x].size();i++){
+            sum[x][i].second+=sum[x][i-1].second;
+        }
+        sort(cnt[x].begin(),cnt[x].end());
+        for(int i=1;i<cnt[x].size();i++){
+            cnt[x][i].second+=cnt[x][i-1].second;
+        }
+        for(int i=0;i<sum1[x].size();i++){
+            auto &p=sum1[x][i];
+            sort(p.begin(),p.end());
+            for(int j=1;j<p.size();j++){
+                p[j].second+=p[j-1].second;
+            }
+        }
+        for(int i=0;i<cnt1[x].size();i++){
+            auto &p=cnt1[x][i];
+            sort(p.begin(),p.end());
+            for(int j=1;j<p.size();j++){
+                p[j].second+=p[j-1].second;
+            }
+        }
+        for(int &to:vv[x]){
+            self(self,to);
+        }
+    };
+    init(init,rt);
+    int ans=0;
+    while(q--){
+        int u,a,b;
+        cin>>u>>a>>b;
+        int l=min((a+ans)%A,(b+ans)%A);
+        int r=max((a+ans)%A,(b+ans)%A);
+        int pre=0,prew=0;
+        ans=0;
+        for(int i=u;i;i=fa[i]){
+            if(i==u){
+                auto it=upper_bound(sum[i].begin(),sum[i].end(),make_pair(r,INF));
+                if(it!=sum[i].begin()) ans+=prev(it)->second;
+                it=lower_bound(sum[i].begin(),sum[i].end(),make_pair(l,-INF));
+                if(it!=sum[i].begin()) ans-=prev(it)->second;
+            }else{
+                int d=getdis(i,u);
+                int distmp=0,cnttmp=0;
+                auto it=upper_bound(sum[i].begin(),sum[i].end(),make_pair(r,INF));
+                if(it!=sum[i].begin()) distmp+=prev(it)->second;
+                it=lower_bound(sum[i].begin(),sum[i].end(),make_pair(l,-INF));
+                if(it!=sum[i].begin()) distmp-=prev(it)->second;
+                it=upper_bound(cnt[i].begin(),cnt[i].end(),make_pair(r,INF));
+                if(it!=cnt[i].begin()) cnttmp+=prev(it)->second;
+                it=lower_bound(cnt[i].begin(),cnt[i].end(),make_pair(l,-INF));
+                if(it!=cnt[i].begin()) cnttmp-=prev(it)->second;
+
+                int predistmp=0,precnttmp=0;
+                pre=sonid[i][pre];
+                it=upper_bound(sum1[i][pre].begin(),sum1[i][pre].end(),make_pair(r,INF));
+                if(it!=sum1[i][pre].begin()) predistmp+=prev(it)->second;
+                it=lower_bound(sum1[i][pre].begin(),sum1[i][pre].end(),make_pair(l,-INF));
+                if(it!=sum1[i][pre].begin()) predistmp-=prev(it)->second;
+                it=upper_bound(cnt1[i][pre].begin(),cnt1[i][pre].end(),make_pair(r,INF));
+                if(it!=cnt1[i][pre].begin()) precnttmp+=prev(it)->second;
+                it=lower_bound(cnt1[i][pre].begin(),cnt1[i][pre].end(),make_pair(l,-INF));
+                if(it!=cnt1[i][pre].begin()) precnttmp-=prev(it)->second;
+                ans+=(distmp-predistmp)+d*(cnttmp-precnttmp);
+            }
+            pre=i;
+        }
+        cout<<ans<<"\n";
+    }
+}
+```
+
 ## Kruskal重构树
 
 ```cpp
@@ -8121,7 +8305,55 @@ signed main(){
     return 0;
 }
 ```
+### 欧拉序+st表
 
+预处理$O(nlogn)$，询问$O(1)$
+
+```c++
+struct ST {
+    vector<vector<pair<int,int>>> dp;
+    ST(int n, vector<pair<int,int>> &v) {
+        dp.resize(20);
+        for (int i = 0; i < 20; i++) {
+            dp[i].resize(n + 1);
+        }
+        for (int i = 1; i <= n; i++) {
+            dp[0][i] = v[i];
+        }
+        for (int i = 1; i <= 18; i++) {
+            for (int j = 1; j + (1ll << i) - 1 <= n; j++) {
+                dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + (1ll << i - 1)]);
+            }
+        }
+    }
+    int query(int l, int r) {
+        int k = __lg(r - l + 1);
+        return min(dp[k][l], dp[k][r - (1ll << k) + 1]).second;
+    }
+};
+int main(){
+	vector<pair<int,int>> lcaqu(1);
+    vector<int> lcadfn(n+1),dep(n+1),dis(n+1);
+    auto lcadfs=[&](auto &&self,int x,int fa)->void{
+        lcadfn[x]=lcaqu.size();
+        dep[x]=dep[fa]+1;
+        lcaqu.emplace_back(dep[x],x);
+        for(auto &[to,w]:v[x]){
+            if(to==fa) continue;
+            dis[to]=dis[x]+w;
+            self(self,to,x);
+            lcaqu.emplace_back(dep[x],x);
+        }
+    };
+    lcadfs(lcadfs,1,0);
+    ST st(lcaqu.size()-1,lcaqu);
+    auto getlca=[&](int x,int y){
+        int l=lcadfn[x],r=lcadfn[y];
+        if(l>r) swap(l,r);
+        return st.query(l,r);
+    };
+}
+```
 ## 图的匹配
 
 ### 一般图最大匹配
