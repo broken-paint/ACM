@@ -647,7 +647,7 @@ struct TRIE{
 };
 ```
 
-## ST 表
+## ST表
 
 ```cpp
 struct ST {
