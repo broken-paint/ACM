@@ -75,6 +75,12 @@ update和query的时候一定要检查$[l,r]$是否正确
 
 ```cpp
 struct SegmentTree {
+    int lp(int x) {
+        return x << 1;
+    }
+    int rp(int x) {
+        return x << 1 | 1;
+    }
     struct edge {
         int sum;
         edge() {
@@ -85,15 +91,15 @@ struct SegmentTree {
     vector<edge> node;
     int n;
     void pushup(int id, int l, int r) {
-        node[id].sum = node[id << 1].sum + node[id << 1 | 1].sum;
+        node[id].sum = node[lp(id)].sum + node[rp(id)].sum;
     }
     void pushdown(int id, int l, int r) {
         if (lazy[id]) {
             int mid = l + (r - l >> 1);
-            lazy[id << 1] += lazy[id];
-            lazy[id << 1 | 1] += lazy[id];
-            node[id << 1].sum += (mid - l + 1) * lazy[id];
-            node[id << 1 | 1].sum += (r - mid) * lazy[id];
+            lazy[lp(id)] += lazy[id];
+            lazy[rp(id)] += lazy[id];
+            node[lp(id)].sum += (mid - l + 1) * lazy[id];
+            node[rp(id)].sum += (r - mid) * lazy[id];
             lazy[id] = 0;
         }
     }
@@ -110,8 +116,8 @@ struct SegmentTree {
                 return;
             }
             int mid = l + (r - l >> 1);
-            self(self, id << 1, l, mid);
-            self(self, id << 1 | 1, mid + 1, r);
+            self(self, lp(id), l, mid);
+            self(self, rp(id), mid + 1, r);
             pushup(id, l, r);
         };
         buildtree(buildtree, 1, 1, n);
@@ -132,9 +138,9 @@ struct SegmentTree {
         pushdown(id, l, r);
         int mid = l + (r - l >> 1);
         if (x <= mid)
-            update(id << 1, l, mid, x, y, delta);
+            update(lp(id), l, mid, x, y, delta);
         if (y > mid)
-            update(id << 1 | 1, mid + 1, r, x, y, delta);
+            update(rp(id), mid + 1, r, x, y, delta);
         pushup(id, l, r);
     }
     int query(int id, int l, int r, int x, int y) {
@@ -146,9 +152,9 @@ struct SegmentTree {
         int mid = l + (r - l >> 1);
         int ans = 0;
         if (x <= mid)
-            ans += query(id << 1, l, mid, x, y);
+            ans += query(lp(id), l, mid, x, y);
         if (y > mid)
-            ans += query(id << 1 | 1, mid + 1, r, x, y);
+            ans += query(rp(id), mid + 1, r, x, y);
         return ans;
     }
     // 第一个满足前缀和>x的位置,找不到n+1
@@ -161,10 +167,10 @@ struct SegmentTree {
         }
         pushdown(id, l, r);
         int mid = l + (r - l >> 1);
-        if (node[id << 1].sum > x) {
-            return upper_bound(id << 1, l, mid, x);
+        if (node[lp(id)].sum > x) {
+            return upper_bound(lp(id), l, mid, x);
         } else {
-            return upper_bound(id << 1 | 1, mid + 1, r, x - node[id << 1].sum);
+            return upper_bound(rp(id), mid + 1, r, x - node[lp(id)].sum);
         }
     }
 };
